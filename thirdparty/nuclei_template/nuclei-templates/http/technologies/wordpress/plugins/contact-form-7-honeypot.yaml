@@ -1,0 +1,49 @@
+id: wordpress-contact-form-7-honeypot
+
+info:
+  name: Honeypot for Contact Form 7 — Protect Contact Form 7 spam with ease! [100% FREE Anti-Spam Plugin] Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/contact-form-7-honeypot/
+  metadata:
+    plugin_namespace: contact-form-7-honeypot
+    wpscan: https://wpscan.com/plugin/contact-form-7-honeypot
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/contact-form-7-honeypot/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/contact-form-7-honeypot.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a00463044022074e19dd292ef713a3b1979c5d5912d4fcc01b974c58083b80b66d55927dae16e0220247d7be2d6184c43661a0b34f8de77b98d7c50eb26a3cfb9f17f7389f9760735:922c64590222798bb761d5b6d8e72950

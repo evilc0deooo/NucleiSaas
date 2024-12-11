@@ -1,0 +1,49 @@
+id: wordpress-advanced-custom-fields
+
+info:
+  name: Advanced Custom Fields (ACF) Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/advanced-custom-fields/
+  metadata:
+    plugin_namespace: advanced-custom-fields
+    wpscan: https://wpscan.com/plugin/advanced-custom-fields
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/advanced-custom-fields/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/advanced-custom-fields.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a00463044022046528e07571b9054f08e0b88e9b6445ea705f368146e97d643a40e4e150df1fb022019d87e24dd2ad1f2d350d090d52ab47b18cde42fb00935687815f3028582233e:922c64590222798bb761d5b6d8e72950

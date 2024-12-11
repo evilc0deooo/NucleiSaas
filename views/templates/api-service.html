@@ -1,0 +1,191 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> 服务 </small></h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item active">Service</li>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <div class="content">
+        <div class="container">
+            <!-- card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Service</h3>
+                </div>
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <div>
+                        {% include 'api-nav-link.html' %}
+                        <form id="searchForm">
+                            <div class="form-group">搜索</div>
+                            <label><input type="search" id="ip" class="form-control form-control"
+                                          placeholder="IP"></label>
+                            <label><input type="search" id="port" class="form-control form-control"
+                                          placeholder="端口号"></label>
+                            <label><input type="search" id="service_name" class="form-control form-control"
+                                          placeholder="系统服务名称"></label>
+                            <label><input type="search" id="service_version" class="form-control form-control"
+                                          placeholder="系统服务版本"></label>
+                            <label><input type="search" id="service_product" class="form-control form-control"
+                                          placeholder="产品"></label>
+                            <label><input type="search" id="task_id" class="form-control form-control"
+                                          style="display: none;" value="{% if task_id %}{{ task_id }}{% endif %}"
+                                          placeholder="任务ID"></label>
+                            <br>
+                            <label><input type="submit" class="btn btn-default"></label>
+                            <br>
+                        </form>
+                    </div>
+                    <br>
+                    <table id="data-table" class="table table-bordered table-striped">
+                        <thead style="white-space: nowrap; text-align: center;">
+                        <tr>
+                            <th>任务ID</th>
+                            <th>服务名称</th>
+                            <th>服务信息</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody style="white-space: nowrap; text-align: center;">
+                        <!-- Table data will be loaded dynamically using DataTables -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content -->
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}
+<script>
+    $(document).ready(function () {
+        const dataTable = $('#data-table').DataTable({
+            processing: true, // 显示加载中提示
+            serverSide: true, // 启用服务器端处理
+            // 启用水平滚动
+            scrollX: true,
+            // 启用垂直滚动时缩小表格高度
+            scrollCollapse: false,
+            searching: false, // 禁用搜索
+            ordering: false, // 禁用排序
+            // 启用长度更改
+            lengthChange: true,
+            autoWidth: false,
+            pagingType: 'full_numbers', //显示首页尾页
+
+            ajax: {
+                url: '/Ajax/GetService',
+                type: 'GET',
+                data: function (d) {
+                    const taskId = $('#task_id').val();
+                    const ip = $('#ip').val();
+                    const port = $('#port').val();
+                    const serviceName = $('#service_name').val();
+                    const serviceVersion = $('#service_version').val();
+                    const serviceProduct = $('#service_product').val();
+                    // 将搜索框中的值添加到 DataTables 请求参数中
+                    d.task_id = taskId;
+                    d.ip = ip;
+                    d.port = port;
+                    d.service_name = serviceName;
+                    d.service_version = serviceVersion;
+                    d.service_product = serviceProduct;
+
+                    return d;
+                },
+            },
+            columns: [
+                // 对应 API 返回的数据字段
+                {data: 'task_id', visible: false},
+                // {data: 'service_name'},
+                {
+                    data: 'service_name',
+                    render: function (data) {
+                        let html = '';
+                        if (data) {
+                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // {data: 'service_info'},
+                {
+                    data: null,
+                    render: function (data, type, row) {
+                        let html = '';
+                        // console.log(row.service_info)
+                        if (row.service_info.length > 0) {
+                            let headersArray = row.service_info;
+                            headersArray.forEach(function (data) {
+                                html += '<p><span class="badge badge-light">' + data['ip'] + '</span> <span class="badge badge-light">' + data['port_id'] + '</span> <span class="badge badge-light">' + data['product'] + '</span> <span class="badge badge-light">' + data['version'] + '</span></p>'
+                            });
+                        } else {
+                            html += '<p><span class="badge badge-light"> - </span></p>'
+                        }
+
+                        return html;
+                    }
+                },
+                {
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
+                        let html = '';
+                        html += '<a href="#' + row.task_id + '" class="btn btn-sm btn-default">删除</a> '
+                        return html
+
+                    }, visible: false
+                },
+                // Add more columns as needed
+            ],
+            "language": //把文字变为中文
+                {
+                    "sProcessing": "加载中...",
+                    "sLengthMenu": "显示条数： _MENU_ ",
+                    "sZeroRecords": "没有匹配结果",
+                    "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                    "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                    "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                    "sInfoPostFix": "",
+                    "sSearch": "搜索:",
+                    "sUrl": "",
+                    "sEmptyTable": "表中数据为空",
+                    "sLoadingRecords": "载入中...",
+                    "sInfoThousands": ",",
+                    "oPaginate": {
+                        "sFirst": "<<", //首页
+                        "sPrevious": "<", //上一页
+                        "sNext": ">", //下一页
+                        "sLast": ">>" //尾页
+                    },
+                },
+            'aLengthMenu': [20, 50, 100, 500, 1000], //设置每页显示记录的下拉菜单
+        });
+
+        // 监听表单提交事件
+        $('#searchForm').on('submit', function (event) {
+            event.preventDefault(); // 阻止表单默认提交行为
+            dataTable.ajax.reload(); // 重新加载 DataTables 数据
+        });
+    });
+
+</script>
+

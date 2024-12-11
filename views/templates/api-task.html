@@ -1,0 +1,269 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> 任务管理 </small></h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item active">Task Manage</li>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <div class="content">
+        <div class="container">
+            <!-- card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Task Manage</h3>
+                </div>
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <div>
+                        <form id="searchForm">
+                            <div class="form-group">搜索</div>
+                            <label><input type="search" id="task_id" class="form-control form-control"
+                                          placeholder="任务ID"></label>
+                            <label><input type="search" id="target" class="form-control form-control"
+                                          placeholder="任务目标"></label>
+                            <label><input type="search" id="task_status" class="form-control form-control"
+                                          placeholder="任务状态"></label>
+                            <label><input type="search" id="project_id" class="form-control form-control"
+                                          style="display: none;" value="{% if project_id %}{{ project_id }}{% endif %}"
+                                          placeholder="项目ID"></label>
+                            <br>
+                            <label><input type="submit" class="btn btn-default"></label><br>
+                        </form>
+                    </div>
+                    <br>
+                    <table id="data-table" class="table table-bordered table-striped">
+                        <thead style="white-space: nowrap; text-align: center; vertical-align: middle; ">
+                        <tr>
+                            <th>任务ID</th>
+                            <th>项目名称</th>
+                            <th>目标</th>
+                            <th>统计</th>
+                            <th>任务状态</th>
+                            <th>类型</th>
+                            <th>标签</th>
+                            <th>耗时</th>
+                            <th>CeleryID</th>
+                            <th>Project ID</th>
+                            <th>配置项</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody style="white-space: nowrap; text-align: center; vertical-align: middle; ">
+                        <!-- Table data will be loaded dynamically using DataTables -->
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+            <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content -->
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}
+<script>
+    $(document).ready(function () {
+        const dataTable = $('#data-table').DataTable({
+            processing: true, // 显示加载中提示
+            serverSide: true, // 启用服务器端处理
+            // 启用水平滚动
+            scrollX: true,
+            // 启用垂直滚动时缩小表格高度
+            scrollCollapse: false,
+            searching: false, // 禁用搜索
+            ordering: false, // 禁用排序
+            // 启用长度更改
+            lengthChange: true,
+            autoWidth: false,
+            pagingType: 'full_numbers', //显示首页尾页
+
+            ajax: {
+                url: '/Ajax/GetTask',
+                type: 'GET',
+                data: function (d) {
+                    const projectId = $('#project_id').val();
+                    const taskId = $('#task_id').val();
+                    const target = $('#target').val();
+                    const taskStatus = $('#task_status').val();
+
+                    // 将搜索框中的值添加到 DataTables 请求参数中
+                    d.project_id = projectId;
+                    d.task_id = taskId;
+                    d.target = target;
+                    d.task_status = taskStatus;
+
+                    return d;
+                },
+            },
+
+            columns: [
+                // 对应 API 返回的数据字段
+                {data: 'task_id', visible: false},
+                {data: 'project_name', visible: false},
+                {
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
+                        let html = '';
+                        html += '<a href="/Sites/' + row.task_id + '">' + row.target + '</a>';
+                        return html
+                    }
+                },
+                {
+                    data: 'statistic',
+                    render: function (data) {
+                        let html = '';
+                        if (data) {
+                            html += '站点: ' + data.site_cnt + '<br>'
+                            html += '域名: ' + data.domain_cnt;
+                        } else {
+                            html += '<p>-</p>';
+                        }
+                        return html;
+                    }
+                },
+                {
+                    data: 'task_status',
+                    render: function (data) {
+                        let html = '';
+                        if (data === 'done') {
+                            html += '<p><span class="badge badge-success">完成</span></p>';
+                        } else if (data === 'error') {
+                            html += '<p><span class="badge badge-danger">错误</span></p>';
+                        } else {
+                            html += '<p><span class="badge badge-secondary">' + data + '</span></p>';
+                        }
+                        return html;
+                    }
+                },
+                {data: 'type', visible: false},
+                {data: 'task_tag', visible: false},
+                {
+                    data: 'service',
+                    render: function (data) {
+                        if (data && data.length > 0) {
+                            // 构建服务名称列表，隐藏的详情内容
+                            let html = '';
+                            data.forEach(function (service) {
+                                html += service.name + ': ' + service.elapsed + 's <br>';
+                            });
+                            // 返回按钮和隐藏的详情内容
+                            return '<button class="btn btn-sm btn-default service-popover" data-toggle="popover" data-html="true" data-content="' + html + '">查看详情</button>';
+                        } else {
+                            return '-';
+                        }
+                    }
+                },
+                {data: 'celery_id', visible: false},
+                {data: 'project_id', visible: false},
+                {
+                    data: 'options',
+                    render: function (data) {
+                        let html = '';
+                        if (data) {
+                            for (let key in data) {
+                                if (data.hasOwnProperty(key)) {
+                                    html += key + ': ' + (data[key] ? data[key] : 'false') + '</br>';
+                                }
+                            }
+                            return '<button class="btn btn-sm btn-default service-popover" data-toggle="popover" data-html="true" data-content="' + html + '">options</button>';
+                        } else {
+                            return '-';
+                        }
+                    }
+                },
+                {data: 'start_time'},
+                {data: 'end_time'},
+                {
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
+                        let html = '';
+                        html += '<a href="/Sites/' + row.task_id + '" class="btn btn-sm btn-default">详情</a> '
+                        html += '<a href="/StopTask/' + row.task_id + '" class="btn btn-sm btn-default">停止</a> '
+                        html += '<a href="/DelTask/' + row.task_id + '" class="btn btn-sm btn-danger">删除</a>'
+                        return html
+
+                    }
+                },
+                // Add more columns as needed
+            ],
+
+            "language": //把文字变为中文
+                {
+                    "sProcessing": "加载中...",
+                    "sLengthMenu": "显示条数： _MENU_ ",
+                    "sZeroRecords": "没有匹配结果",
+                    "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                    "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                    "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                    "sInfoPostFix": "",
+                    "sSearch": "搜索:",
+                    "sUrl": "",
+                    "sEmptyTable": "表中数据为空",
+                    "sLoadingRecords": "载入中...",
+                    "sInfoThousands": ",",
+                    "oPaginate": {
+                        "sFirst": "<<", //首页
+                        "sPrevious": "<", //上一页
+                        "sNext": ">", //下一页
+                        "sLast": ">>" //尾页
+                    },
+                },
+            'aLengthMenu': [20, 50, 100, 500, 1000], //设置每页显示记录的下拉菜单
+        });
+        // 初始化所有带有 .service-popover 类的按钮为Popover
+        $('[data-toggle="popover"]').popover({
+            trigger: 'manual', // 手动触发Popover
+            html: true, // 允许内容包含HTML
+            container: 'body', // 将Popover附加到body元素
+            content: function () {
+                // 获取按钮上定义的data-content属性值作为内容
+                return $(this).data('content');
+            }
+        });
+
+        // 点击按钮显示或隐藏Popover
+        $(document).on('click', '.service-popover', function () {
+            // 隐藏所有其他的Popover
+            $('[data-toggle="popover"]').not(this).popover('hide');
+
+            // 切换当前按钮的Popover显示状态
+            $(this).popover('toggle');
+        });
+
+        // 点击页面其他地方隐藏所有Popover
+        $(document).on('click', function (e) {
+            if ($(e.target).data('toggle') !== 'popover' && $(e.target).parents('.popover.in').length === 0) {
+                $('[data-toggle="popover"]').popover('hide');
+            }
+        });
+
+        // 监听表单提交事件
+        $('#searchForm').on('submit', function (event) {
+            event.preventDefault(); // 阻止表单默认提交行为
+            dataTable.ajax.reload(); // 重新加载 DataTables 数据
+        });
+    });
+
+</script>
+

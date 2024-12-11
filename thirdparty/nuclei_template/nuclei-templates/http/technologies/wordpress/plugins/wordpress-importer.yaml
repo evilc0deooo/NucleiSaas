@@ -1,0 +1,49 @@
+id: wordpress-wordpress-importer
+
+info:
+  name: WordPress Importer Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/wordpress-importer/
+  metadata:
+    plugin_namespace: wordpress-importer
+    wpscan: https://wpscan.com/plugin/wordpress-importer
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/wordpress-importer/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/wordpress-importer.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 490a00463044022024fb1ba364ddb8b83c7ea6a4690b290bb7082969805bd4b5355e0b71f4909b910220733bd02fc8b81472883de83315f95dfb063b0974c19b8b72119afb3d2f710a88:922c64590222798bb761d5b6d8e72950

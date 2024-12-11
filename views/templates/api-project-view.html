@@ -1,0 +1,162 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> 项目视图 </small></h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item active">Project View</li>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <div class="content">
+        <div class="container">
+            <!-- card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Project View</h3>
+                </div>
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <div>
+                        <form id="searchForm">
+                            <div class="form-group">搜索</div>
+                            <label><input type="search" id="project_id" class="form-control form-control"
+                                          placeholder="项目ID"></label>
+                            <label><input type="search" id="project_name" class="form-control form-control"
+                                          placeholder="项目名称"></label>
+                            <label><input type="search" id="project_description" class="form-control form-control"
+                                          placeholder="项目描述"></label><br>
+                            <label><input type="submit" class="btn btn-default"></label><br>
+                        </form>
+                    </div>
+                    <br>
+                    <table id="data-table" class="table table-bordered table-striped">
+                        <thead style="white-space: nowrap; text-align: center;">
+                        <tr>
+                            <th>ID</th>
+                            <th>项目名称</th>
+                            <th>Description</th>
+                            <th>创建时间</th>
+                            <th>Project ID</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody style="white-space: nowrap; text-align: center;">
+                        <!-- Table data will be loaded dynamically using DataTables -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content -->
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}
+<script>
+    $(document).ready(function () {
+        const dataTable = $('#data-table').DataTable({
+            processing: true, // 显示加载中提示
+            serverSide: true, // 启用服务器端处理
+            // 启用水平滚动
+            scrollX: true,
+            // 启用垂直滚动时缩小表格高度
+            scrollCollapse: false,
+            searching: false, // 禁用搜索
+            ordering: false, // 禁用排序
+            // 启用长度更改
+            lengthChange: true,
+            autoWidth: false,
+            pagingType: 'full_numbers', //显示首页尾页
+
+            ajax: {
+                url: '/Ajax/ProjectView',
+                type: 'GET',
+                data: function (d) {
+                    const projectId = $('#project_id').val();
+                    const projectName = $('#project_name').val();
+                    const projectDescription = $('#project_description').val();
+
+                    // 将搜索框中的值添加到 DataTables 请求参数中
+                    d.project_id = projectId;
+                    d.project_name = projectName;
+                    d.project_description = projectDescription;
+                    return d;
+                },
+            },
+            columns: [
+                // 对应 API 返回的数据字段
+                {data: 'id', visible: false},
+                {
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
+                        let html = '';
+                        html += '<a href="/TaskManage/' + row.project_id + '">' + row.project_name + '</a>';
+                        return html
+                    }
+                },
+                {data: 'project_description'},
+                {data: 'create_time'},
+                {data: 'project_id', visible: false}, // 隐藏项目ID列，如果不需要显示
+                {
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
+                        let html = '';
+                        html += '<a href="/TaskManage/' + row.project_id + '" class="btn btn-sm btn-default">详情</a> '
+                        html += '<a href="/Download/Project/Domain/' + row.project_id + '" class="btn btn-sm btn-default">导出域名</a> '
+                        html += '<a href="/Download/Project/Site/' + row.project_id + '" class="btn btn-sm btn-default">导出站点</a> '
+                        html += '<a href="/Download/Project/FileLeak/' + row.project_id + '" class="btn btn-sm btn-default">导出文件泄露</a> '
+                        html += '<a href="/DelAssetsProject/' + row.project_id + '" class="btn btn-sm btn-danger">删除</a>'
+                        return html
+
+                    }
+                },
+                // Add more columns as needed
+            ],
+            "language": //把文字变为中文
+                {
+                    "sProcessing": "加载中...",
+                    "sLengthMenu": "显示条数： _MENU_ ",
+                    "sZeroRecords": "没有匹配结果",
+                    "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                    "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                    "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                    "sInfoPostFix": "",
+                    "sSearch": "搜索:",
+                    "sUrl": "",
+                    "sEmptyTable": "表中数据为空",
+                    "sLoadingRecords": "载入中...",
+                    "sInfoThousands": ",",
+                    "oPaginate": {
+                        "sFirst": "<<", //首页
+                        "sPrevious": "<", //上一页
+                        "sNext": ">", //下一页
+                        "sLast": ">>" //尾页
+                    },
+                },
+            'aLengthMenu': [20, 50, 100, 500, 1000], //设置每页显示记录的下拉菜单
+        });
+        // 监听表单提交事件
+        $('#searchForm').on('submit', function (event) {
+            event.preventDefault(); // 阻止表单默认提交行为
+            dataTable.ajax.reload(); // 重新加载 DataTables 数据
+        });
+    });
+
+</script>

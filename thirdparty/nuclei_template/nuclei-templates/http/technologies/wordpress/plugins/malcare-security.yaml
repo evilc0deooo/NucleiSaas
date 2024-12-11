@@ -1,0 +1,49 @@
+id: wordpress-malcare-security
+
+info:
+  name: MalCare WordPress Security Plugin – Malware Scanner, Cleaner, Security Firewall Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/malcare-security/
+  metadata:
+    plugin_namespace: malcare-security
+    wpscan: https://wpscan.com/plugin/malcare-security
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/malcare-security/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/malcare-security.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100ce4204ad1dc28239e9b2c74d400331c2e6f5a626c69e34084efc0515274b3ace022100fdcd0b2b3a78cfbd081b0b812b96fcab55f74839e03eea4b1113793bf1150f5e:922c64590222798bb761d5b6d8e72950

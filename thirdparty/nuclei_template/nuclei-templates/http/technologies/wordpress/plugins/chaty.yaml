@@ -1,0 +1,49 @@
+id: wordpress-chaty
+
+info:
+  name: Floating Chat Widget' Contact Chat Icons, Telegram Chat, Line Messenger, WeChat, Email, SMS, Call Button – Chaty Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/chaty/
+  metadata:
+    plugin_namespace: chaty
+    wpscan: https://wpscan.com/plugin/chaty
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/chaty/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/chaty.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502205b438d5a4195ab45bec1761cac5fc7d089d8383ff53c035add35f37d7cf636ea022100a3705b79f53a46ac738fb5af13af4fe3f0f36c1f5da40204085ebbdbce034ee9:922c64590222798bb761d5b6d8e72950

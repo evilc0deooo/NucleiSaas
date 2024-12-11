@@ -1,0 +1,49 @@
+id: wordpress-pinterest-for-woocommerce
+
+info:
+  name: Pinterest for WooCommerce Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/pinterest-for-woocommerce/
+  metadata:
+    plugin_namespace: pinterest-for-woocommerce
+    wpscan: https://wpscan.com/plugin/pinterest-for-woocommerce
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/pinterest-for-woocommerce/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/pinterest-for-woocommerce.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a0047304502207f7996ccd1cf043f74444be6a6d68d8da74321e6bcb0a3f9f5129a1ba55100e6022100cce30b5751a594050aa38a44a5717db723f296dcf144dc7a636236f11e86f6b6:922c64590222798bb761d5b6d8e72950

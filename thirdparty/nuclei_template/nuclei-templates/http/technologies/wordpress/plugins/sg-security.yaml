@@ -1,0 +1,49 @@
+id: wordpress-sg-security
+
+info:
+  name: Security Optimizer – The All-In-One Protection Plugin Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/sg-security/
+  metadata:
+    plugin_namespace: sg-security
+    wpscan: https://wpscan.com/plugin/sg-security
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/sg-security/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/sg-security.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100dc1877563f653578e720190e98dd70e9f0a29d65e1d1498632ff1198c84f3839022100b103bfbd0724866003a177ade350373a49ff835b3cae94dabc5ee3d16b08d97d:922c64590222798bb761d5b6d8e72950

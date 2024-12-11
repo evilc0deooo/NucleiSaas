@@ -1,0 +1,125 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper" xmlns="http://www.w3.org/1999/html">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">
+                        <small>Nuclei 项目视图</small>
+                    </h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item active">Project view</li>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <div class="content">
+        <div class="container">
+            <div class="row">
+                {% for entry in entries %}
+                <div class="col-lg-6">
+                    <!--<div class="card card-primary card-outline">-->
+                    <div class="card card-outline">
+                        <div class="card-header">
+                            <h5 class="card-title m-0">{{ entry.project_name }}</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if entry.project_description %}
+                            项目描述: {{ entry.project_description }}<br>
+                            {% else %}
+                            项目描述: Good job :)<br>
+                            {% endif %}
+                            {% if entry.nuclei_template_yaml %}
+                            漏洞模板: <span class="badge badge-light">{{ entry.nuclei_template_yaml | truncate(length=75) }}</span><br>
+                            {% else %}
+                            漏洞模板: -<br>
+                            {% endif %}
+                            漏洞等级:
+                            {% for severity in entry.nuclei_severity.split(',') %}
+                                {% if severity == 'critical' %}
+                                    <span class="badge badge-danger">critical</span>
+                                {% endif %}
+                                {% if severity == 'high' %}
+                                    <span class="badge badge-danger">high</span>
+                                {% endif %}
+                                {% if severity == 'medium' %}
+                                    <span class="badge badge-warning">medium</span>
+                                {% endif %}
+                                {% if severity == 'info' %}
+                                    <span class="badge badge-success">info</span>
+                                {% endif %}
+                            {% endfor %}
+                            <br>
+                            {% if entry.nuclei_template_tags %}
+                            模板标签: <span class="badge badge-light">{{ entry.nuclei_template_tags }}</span><br>
+                            {% else %}
+                            模板标签: - <br>
+                            {% endif %}
+                            {% if entry.nuclei_proxy %}
+                            使用代理: <span class="badge badge-light">{{ entry.nuclei_proxy }}</span><br>
+                            {% else %}
+                            使用代理: - <br>
+                            {% endif %}
+                            <p>创建时间: {{ entry.date }}</p>
+                            <!--suppress HtmlUnknownTarget -->
+                            <a href="/VulRet/{{ entry.project_id }}" class="btn btn-default">查看项目</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                <!-- /.col-md-6 -->
+            </div>
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-sm-12 col-md-5">
+                    <div class="dataTables_info" id="example2_info" role="status" aria-live="polite">
+                        显示{{ page_size }}个项目
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-7">
+                    <div class="dataTables_paginate paging_simple_numbers" id="example2_paginate">
+                        <ul class="pagination">
+                            {% if page %}
+                            {% if page > 1 %}
+                            <li class="paginate_button page-item previous">
+                                <a href="/ProjectView/{{ page - 1 }}" aria-controls="example2" data-dt-idx="0"
+                                   tabindex="0" class="page-link">上一页</a>
+                            </li>
+                            {% else %}
+                            <li class="paginate_button page-item previous disabled">
+                                <a href="#" aria-controls="example2" data-dt-idx="0" tabindex="0"
+                                   class="page-link">上一页</a>
+                            </li>
+                            {% endif %}
+
+                            {% if entries | length == 10 %}
+                            <!-- 当前页面的项目数如果不等 10 也就是小于 10 个项目则不显示下一页 -->
+                            <li class="paginate_button page-item previous">
+                                <a href="/ProjectView/{{ page + 1 }}" aria-controls="example2" data-dt-idx="0"
+                                   tabindex="0" class="page-link">下一页</a>
+                            </li>
+                            {% else %}
+                            <li class="paginate_button page-item previous disabled">
+                                <a href="#" aria-controls="example2" data-dt-idx="0" tabindex="0"
+                                   class="page-link">下一页</a>
+                            </li>
+                            {% endif %}
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+{% include 'footer.html' %}

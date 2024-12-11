@@ -1,0 +1,49 @@
+id: wordpress-nextend-facebook-connect
+
+info:
+  name: Nextend Social Login and Register Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/nextend-facebook-connect/
+  metadata:
+    plugin_namespace: nextend-facebook-connect
+    wpscan: https://wpscan.com/plugin/nextend-facebook-connect
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/nextend-facebook-connect/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/nextend-facebook-connect.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a004830460221008448a7fb42f695b338a36243378897317a1feaf4aac22a217e4ad22f4978fab6022100982c3e0778ba0099e59ad3f40ce7adb9c5fb37df95ca3c0be132d7b85f29e6f7:922c64590222798bb761d5b6d8e72950

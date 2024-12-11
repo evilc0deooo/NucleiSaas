@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<!--
+This is a starter template page. Use this page to start your new project from
+scratch. This page gets rid of all links and provides the needed markup only.
+-->
+<html lang="en">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pentest TeamWork | Platform</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/fontawesome-free/css/all.min.css') }}">
+    <!-- icheck bootstrap -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/icheck-bootstrap/icheck-bootstrap.min.css') }}">
+    <!-- toastr -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/toastr/toastr.min.css') }}">
+    <!-- toastr -->
+    <script src="{{ url_for('static', filename='plugins/toastr/toastr.min.js') }}"></script>
+    <!-- Theme style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='dist/css/adminlte.min.css') }}">
+    <!-- DataTables -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+    <style>
+        /* Custom class for left-aligned content in the specific column */
+        .left-aligned-column {
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body class="layout-top-nav text-sm layout-footer-fixed">
+<div class="wrapper">
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand-md navbar-light navbar-white">
+        <div class="container">
+            <a href="/" class="navbar-brand">
+                <span class="brand-text font-weight-light">Pentest Platform</span>
+            </a>
+            <div class="collapse navbar-collapse order-3" id="navbarCollapse">
+                <!-- Left navbar links -->
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a href="#" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="true" class="nav-link dropdown-toggle">新任务</a>
+                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                            <li><a href="/NewDomainTask" class="dropdown-item">资产收集</a></li>
+                            <li class="dropdown-divider"></li>
+
+                            <li class="dropdown-submenu dropdown-hover">
+                                <a id="dropdownSubMenu2" href="#" role="button" data-toggle="dropdown"
+                                   aria-haspopup="true" aria-expanded="false" class="dropdown-item dropdown-toggle">漏洞扫描</a>
+                                <ul aria-labelledby="dropdownSubMenu2" class="dropdown-menu border-0 shadow">
+                                    <li><a href="/NewTask" class="dropdown-item">Nuclei扫描</a></li>
+                                    <li><a href="/BatchTask" class="dropdown-item">Nuclei批量扫描</a></li>
+                                    <!--
+                                    <li><a href="/NewZombieTask" class="dropdown-item">弱口令服务扫描</a></li>
+                                    <li><a href="/BatchZombieTask" class="dropdown-item">弱口令服务批量扫描</a></li>
+                                    -->
+                                </ul>
+                            </li>
+
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a href="#" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="true" class="nav-link dropdown-toggle">资产收集</a>
+                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                            <li><a href="/AssetsProject" class="dropdown-item">项目视图</a></li>
+                            <li><a href="/TaskManage" class="dropdown-item">任务管理</a></li>
+                            <li><a href="/Sites" class="dropdown-item">站点资产</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a href="#" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="true" class="nav-link dropdown-toggle">Nuclei项目</a>
+                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                            <li><a href="/ProjectView" class="dropdown-item">项目视图</a></li>
+                            <li><a href="/VulRet/ALL" class="dropdown-item">漏洞合集</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a href="#" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="true" class="nav-link dropdown-toggle">弱口令项目</a>
+                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                            <li><a href="/ZombieProjectView" class="dropdown-item">项目视图</a></li>
+                            <li><a href="/ZombieRet/ALL" class="dropdown-item">弱口令合集</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a href="#" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="true" class="nav-link dropdown-toggle">其他功能</a>
+                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                            <li><a href="/CheckNodes" class="dropdown-item">检查所有节点</a></li>
+                            <!--  <li><a href="/GenASN" class="dropdown-item">地区或国家CIDR生成</a></li>-->
+                            <!--  <li><a href="/NewZmapTask" class="dropdown-item">Zmap 端口扫描（单主机）</a></li>-->
+                            <li class="dropdown-divider"></li>
+                            <li><a href="/ClearSites" class="dropdown-item">清空 Nuclei扫描队列!!!</a></li>
+                            <li><a href="/ClearIPs" class="dropdown-item">清空 Zombie扫描队列!!!</a></li>
+                            <li><a href="/DelTask/ErrorStatus" class="dropdown-item">删除所有失败的资产收集任务!!!</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- SEARCH FORM -->
+                <form class="form-inline ml-0 ml-md-3">
+                    <div class="input-group input-group-sm">
+                        <input class="form-control form-control-navbar" type="search" placeholder="Search"
+                               aria-label="Search">
+                        <div class="input-group-append">
+                            <button class="btn btn-navbar" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- Right navbar links -->
+            <ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
+                <!-- Notifications Dropdown Menu -->
+                <li class="nav-item">
+                    <a class="nav-link" href="#" role="button">
+                        <b><small>-</small></b>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>

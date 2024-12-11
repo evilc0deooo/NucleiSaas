@@ -1,0 +1,32 @@
+# -*- coding: utf-8 -*-
+
+class Config(object):
+    # Basic Authentication 认证
+    AUTH_USERNAME = '<authentication username>'
+    AUTH_PASSWORD = '<authentication password>'
+
+    # redis 站点目标扫描队列
+    REDIS_HOST = '127.0.0.1'
+    REDIS_PORT = '6379'
+    REDIS_DB = 1
+    REDIS_PWD = '<redis password>'
+
+    # mongo 数据集结果展示
+    MONGO_HOST = '127.0.0.1'
+    MONGO_PORT = '27017'
+    MONGO_PWD = '<mongo password>'
+
+    MONGO_DB = 'nuclei'
+    MONGO_USERNAME = 'admin'
+    MONGO_AUTH_DB = 'admin'
+    MONGO_URL = f'mongodb://{MONGO_USERNAME}:{MONGO_PWD}@{MONGO_HOST}:{MONGO_PORT}'
+
+    # 节点数量，最小设置为 3 ,设置的越多切片就越多每个节点分配到的目标就少很多
+    NODES_NUMBER = 3
+    # 节点延时时间默认 3 分钟检查队列一次
+    NODES_DELAY = 3
+
+    # DetectConfiguration
+    API_URL = 'http://127.0.0.1:5000'
+    API_TOKEN = '<assets-api-key-token>'
+    API_MONGO_DB = 'assets'

@@ -1,0 +1,49 @@
+id: wordpress-elementor
+
+info:
+  name: Elementor Website Builder – More than Just a Page Builder Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/elementor/
+  metadata:
+    plugin_namespace: elementor
+    wpscan: https://wpscan.com/plugin/elementor
+  tags: tech,wordpress,wp-plugin,top-100,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/elementor/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/elementor.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4a0a00473045022100aaeb2f9b8c33234ca5096e0b8ffbb9b08b64d7783aa92ab872b19bcff62b4e52022031e6d817f4695f47c6c4393de084305a6954f358a0423852a46869b4343d032a:922c64590222798bb761d5b6d8e72950

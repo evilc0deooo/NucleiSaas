@@ -1,0 +1,122 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> Nuclei 批量扫描 </small></h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <a href="/NewTask" class="btn btn-default">返回</a>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <div class="content">
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('batch_nuclei_task') }}">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <div class="form-group">
+                                            <label for="inputName">* 项目名称</label>
+                                            <input type="text" class="form-control" name="project_name"
+                                                   value="" placeholder="请输入项目名称">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="inputDescription">项目描述</label>
+                                            <textarea class="form-control" rows="2"
+                                                      name="project_description"
+                                                      placeholder="请输入项目描述"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="inputName">* Nuclei Yaml 模版</label>
+                                            <input type="text" class="form-control"
+                                                   name="nuclei_template_yaml" value="nuclei-templates/http"
+                                                   placeholder="请输入指定要运行的模板或者模板目录（以逗号分隔或目录形式）">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="inputName">Nuclei Yaml 模版标签过滤 -tags（可选项）</label>
+                                            <input type="text" class="form-control"
+                                                   name="nuclei_template_tags" value=""
+                                                   placeholder="执行带指定tag的模板（以逗号分隔多个标签）">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="inputName">Nuclei 代理 -proxy（可选项）</label>
+                                            <input type="text" class="form-control" name="nuclei_proxy"
+                                                   value="" placeholder="使用 http/socks5 代理列表（以逗号分隔多个代理）">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>* Nuclei Yaml 根据漏洞严重程度运行模板 -severity</label>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="severity_critical" checked
+                                                           value="critical">
+                                                    致命载荷
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="severity_high" checked value="high">
+                                                    高危载荷
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="severity_medium" checked
+                                                           value="medium">
+                                                    中危载荷
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="severity_low" value="low">
+                                                    低危载荷
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="severity_info" disabled value="info">
+                                                    指纹信息（无危害载荷）
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <!-- 更多选项... -->
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inputFile">* 文件上传（强烈建议单次上传在五十万条已内，并点击一次提交耐心等待！）</label></br>
+                                        <input class="btn btn-default" type="file" name="file">
+                                        <input type="submit" value="提交" class="btn btn-default float-right">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <!-- coding... -->
+                            </div>
+                            </br></br>
+                        </div>
+                        <!-- /.card-body -->
+                    </div>
+                    <!-- /.card -->
+                </div>
+                <!-- /.col-md-6 -->
+                <!-- /.row -->
+            </div><!-- /.container-fluid -->
+            <!-- /.content -->
+        </form>
+    </div>
+</div>
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}

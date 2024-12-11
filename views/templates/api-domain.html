@@ -1,0 +1,228 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> 域名信息 </small></h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item active">Domain</li>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <div class="content">
+        <div class="container">
+            <!-- card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Domain</h3>
+                </div>
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <div>
+                        {% include 'api-nav-link.html' %}
+                        <form id="searchForm">
+                            <div class="form-group">搜索</div>
+                            <label><input type="search" id="domain" class="form-control form-control"
+                                          placeholder="域名"></label>
+                            <label><input type="search" id="record" class="form-control form-control"
+                                          placeholder="解析值"></label>
+                            <label><input type="search" id="record_type" class="form-control form-control"
+                                          placeholder="解析类型"></label>
+                            <label><input type="search" id="ips" class="form-control form-control"
+                                          placeholder="IP"></label>
+                            <label><input type="search" id="source" class="form-control form-control"
+                                          placeholder="Source"></label>
+                            <label><input type="search" id="task_id" class="form-control form-control"
+                                          style="display: none;" value="{% if task_id %}{{ task_id }}{% endif %}"
+                                          placeholder="任务ID"></label>
+                            <br>
+                            <label><input type="submit" class="btn btn-default"></label>
+                            <br>
+                        </form>
+                    </div>
+                    <br>
+                    <table id="data-table" class="table table-bordered table-striped">
+                        <thead style="white-space: nowrap; text-align: center;">
+                        <tr>
+                            <th>任务ID</th>
+                            <th>域名</th>
+                            <th>解析值</th>
+                            <th>解析类型</th>
+                            <th>IP 地址</th>
+                            <th>Source</th>
+                            <th>fld</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody style="white-space: nowrap; text-align: center;">
+                        <!-- Table data will be loaded dynamically using DataTables -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content -->
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}
+<script>
+    $(document).ready(function () {
+        const dataTable = $('#data-table').DataTable({
+            processing: true, // 显示加载中提示
+            serverSide: true, // 启用服务器端处理
+            // 启用水平滚动
+            scrollX: true,
+            // 启用垂直滚动时缩小表格高度
+            scrollCollapse: false,
+            searching: false, // 禁用搜索
+            ordering: false, // 禁用排序
+            // 启用长度更改
+            lengthChange: true,
+            autoWidth: false,
+            pagingType: 'full_numbers', //显示首页尾页
+
+            ajax: {
+                url: '/Ajax/GetDomains',
+                type: 'GET',
+                data: function (d) {
+                    const taskId = $('#task_id').val();
+                    const domain = $('#domain').val();
+                    const domainRecord = $('#record').val();
+                    const recordType = $('#record_type').val();
+                    const ips = $('#ips').val();
+                    const source = $('#source').val();
+                    // 将搜索框中的值添加到 DataTables 请求参数中
+                    d.task_id = taskId;
+                    d.domain = domain;
+                    d.record = domainRecord;
+                    d.record_type = recordType;
+                    d.ips = ips;
+                    d.source = source;
+
+                    return d;
+                },
+            },
+            columns: [
+                // 对应 API 返回的数据字段
+                {data: 'task_id', visible: false},
+                // {data: 'domain'},
+                {
+                    data: 'domain',
+                    render: function (data) {
+                        let html = '';
+                        if (data) {
+                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // {data: 'record'},
+                {
+                    data: null,
+                    render: function (data, type, row) {
+                        let headersArray = row.record;
+                        console.log(headersArray)
+                        let html = '';
+                        headersArray.forEach(function (record) {
+                            html += '<p><span class="badge badge-dark">' + record + '</span></p>'
+                        });
+
+                        return html;
+                    }
+                },
+                // {data: 'type'},
+                {
+                    data: 'type',
+                    render: function (data) {
+                        let html = '';
+                        if (data) {
+                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // {data: 'ips'},
+                {
+                    data: null,
+                    render: function (data, type, row) {
+                        let headersArray = row.ips;
+                        console.log(headersArray)
+                        let html = '';
+                        headersArray.forEach(function (ip) {
+                            html += '<p><span class="badge badge-dark">' + ip + '</span></p>'
+                        });
+
+                        return html;
+                    }
+                },
+                // {data: 'source'},
+                {
+                    data: 'source',
+                    render: function (data) {
+                        let html = '';
+                        if (data) {
+                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                {data: 'fld', visible: false},
+                {
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
+                        let html = '';
+                        html += '<a href="#' + row.task_id + '" class="btn btn-sm btn-default">删除</a> '
+                        return html
+
+                    }, visible: false
+                },
+                // Add more columns as needed
+            ],
+            "language": //把文字变为中文
+                {
+                    "sProcessing": "加载中...",
+                    "sLengthMenu": "显示条数： _MENU_ ",
+                    "sZeroRecords": "没有匹配结果",
+                    "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                    "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                    "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                    "sInfoPostFix": "",
+                    "sSearch": "搜索:",
+                    "sUrl": "",
+                    "sEmptyTable": "表中数据为空",
+                    "sLoadingRecords": "载入中...",
+                    "sInfoThousands": ",",
+                    "oPaginate": {
+                        "sFirst": "<<", //首页
+                        "sPrevious": "<", //上一页
+                        "sNext": ">", //下一页
+                        "sLast": ">>" //尾页
+                    },
+                },
+            'aLengthMenu': [20, 50, 100, 500, 1000], //设置每页显示记录的下拉菜单
+        });
+
+        // 监听表单提交事件
+        $('#searchForm').on('submit', function (event) {
+            event.preventDefault(); // 阻止表单默认提交行为
+            dataTable.ajax.reload(); // 重新加载 DataTables 数据
+        });
+    });
+
+</script>
+

@@ -1,0 +1,49 @@
+id: wordpress-add-to-any
+
+info:
+  name: AddToAny Share Buttons Detection
+  author: ricardomaia
+  severity: info
+  reference:
+    - https://wordpress.org/plugins/add-to-any/
+  metadata:
+    plugin_namespace: add-to-any
+    wpscan: https://wpscan.com/plugin/add-to-any
+  tags: tech,wordpress,wp-plugin,top-200
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/wp-content/plugins/add-to-any/readme.txt"
+
+    payloads:
+      last_version: helpers/wordpress/plugins/add-to-any.txt
+
+    extractors:
+      - type: regex
+        part: body
+        internal: true
+        name: internal_detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+      - type: regex
+        part: body
+        name: detected_version
+        group: 1
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        name: "outdated_version"
+        dsl:
+          - compare_versions(internal_detected_version, concat("< ", last_version))
+
+      - type: regex
+        part: body
+        regex:
+          - '(?i)Stable.tag:\s?([\w.]+)'
+# digest: 4b0a00483046022100ecd29bb2e6d315ccd776166a3c9b1eed53211876b8255862e81c76aeff15ebee022100c532cc886f366a64ce5d92d050ef5169238bbdfd0694da2391972a9b2720a5c5:922c64590222798bb761d5b6d8e72950

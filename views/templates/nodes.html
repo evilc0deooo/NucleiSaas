@@ -1,0 +1,148 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> Agent 节点 </small></h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item active">Check Nodes</li>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <div class="content">
+        <div class="container">
+            <!-- card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Check Nodes</h3>
+                </div>
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <table id="data-table" class="table table-bordered table-striped">
+                        <thead style="white-space: nowrap; text-align: center;">
+                        <tr>
+                            <th data-name="id">ID</th>
+                            <th data-name="node_name">节点名称</th>
+                            <th data-name="date">回连时间</th>
+                        </tr>
+                        </thead>
+                        <tbody style="white-space: nowrap; text-align: center;">
+                        <!-- Table data will be loaded dynamically using DataTables -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content -->
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}
+<script>
+    $(document).ready(function () {
+        const dataTable = $('#data-table').DataTable({
+            serverSide: true,
+            // Enable horizontal scrolling
+            scrollX: true,
+            // Enable shrinking table height on vertical scrolling
+            // scrollCollapse: true,
+            searching: false, // 禁用搜索
+            ordering: false, // 禁用排序
+            // Enable length change
+            lengthChange: true,
+            autoWidth: false,
+            ajax: {
+                url: '/Ajax/CheckNodes',
+                type: 'GET',
+                dataSrc: function (json) {
+                    // return json.data;
+                    return json.data.map(function (row) {
+                        // console.log(row)
+                        // Check if the 'column_name' cell is empty and replace it with a dash
+                        if (!row.id) {
+                            row.id = '-';
+                        }
+                        if (!row.node_name) {
+                            row.node_name = '-';
+                        }
+                        if (!row.date) {
+                            row.date = '-';
+                        }
+                        return row;
+                    });
+                }
+            },
+            columns: [
+                // {data: 'id'},
+                {
+                    data: 'id',
+                    render: function (data) {
+                        let html = '';
+                        if (data) {
+                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
+                            return html;
+                        }
+                    }, visible: false
+                },
+                // {data: 'node_name'},
+                {
+                    data: 'node_name',
+                    render: function (data) {
+                        let html = '';
+                        if (data) {
+                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // {data: 'date'},
+                {
+                    data: 'date',
+                    render: function (data) {
+                        let html = '';
+                        if (data) {
+                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // Add more columns as needed
+            ],
+            "language": //把文字变为中文
+                {
+                    "sProcessing": "加载中...",
+                    "sLengthMenu": "显示条数： _MENU_ ",
+                    "sZeroRecords": "没有匹配结果",
+                    "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                    "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                    "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                    "sInfoPostFix": "",
+                    "sSearch": "搜索:",
+                    "sUrl": "",
+                    "sEmptyTable": "表中数据为空",
+                    "sLoadingRecords": "载入中...",
+                    "sInfoThousands": ",",
+                    "oPaginate": {
+                        "sFirst": "<<", //首页
+                        "sPrevious": "<", //上一页
+                        "sNext": ">", //下一页
+                        "sLast": ">>" //尾页
+                    },
+                },
+            'aLengthMenu': [20, 50, 100, 500, 1000], //设置每页显示记录的下拉菜单
+        });
+    });
+</script>

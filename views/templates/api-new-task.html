@@ -1,0 +1,177 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> 资产扫描 </small></h1>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <div class="content">
+        <form action="/NewDomainTask" method="POST">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <div class="form-group">
+                                            <label>* 项目名称</label>
+                                            <input type="text" class="form-control" name="project_name" value=""
+                                                   placeholder="请输入项目名称">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>项目描述</label>
+                                            <textarea class="form-control" rows="2" name="project_description"
+                                                      placeholder="请输入项目描述"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>* 目标资产</label>
+                                            <textarea class="form-control" rows="7" name="target" value=""
+                                                      placeholder="请输入域名或IP目标支持换行输入"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="exampleSelect1">域名爆破字典</label>
+                                            <select class="form-control" id="exampleSelect1" name="domain_brute_type">
+                                                <option value="top2w">高频域名字典</option>
+                                                <option value="test">测试域名字典</option>
+                                            </select>
+                                            <span class="form-text text-muted">选择爆破字典</span>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="exampleSelect2">端口扫描</label>
+                                            <select class="form-control" id="exampleSelect2" name="port_scan_type">
+                                                <option value="custom">自定义端口</option>
+                                                <option value="top10">TOP10 Web端口</option>
+                                                <option value="top100">高频渗透端口</option>
+                                                <option value="top1000">TOP1000</option>
+                                                <option value="all">全部端口</option>
+                                            </select>
+                                            <span class="form-text text-muted">选择扫描字典</span>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>自定义端口</label>
+                                            <textarea class="form-control" name="port_custom" rows="3">80,443</textarea>
+                                            <p><span class="text-muted">自定义端口扫描</span></p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>* 功能选项</label>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="domain_brute" checked value="true">
+                                                    域名爆破
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="alt_dns" value="true">
+                                                    智能域名生成
+                                                </label>
+                                            </div>
+                                            <p><span class="text-muted">针对大量资产尽量关闭该功能（影响速度效率）</span></p>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="dns_query_plugin" checked value="true">
+                                                    DNS API查询
+                                                </label>
+                                            </div>
+                                            <p><span class="text-muted">批量执行DNS API 域名接口查询插件</span></p>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="skip_not_found_domain" value="true">
+                                                    跳过域名泛解析
+                                                </label>
+                                                <p><span
+                                                        class="text-muted">只针对DNS API 查询进行处理，其他子域名搜集方法自带泛解析检测</span>
+                                                </p>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="port_scan" checked value="true">
+                                                    端口扫描
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="skip_scan_cdn_ip" checked value="true">
+                                                    跳过CDN
+                                                </label>
+                                                <p><span
+                                                        class="text-muted">跳过 CDN IP 进行端口扫描</span>
+                                                </p>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="service_detection" value="true">
+                                                    服务识别
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="ssl_cert" value="true">
+                                                    SSL证书
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="site_identify" checked value="true">
+                                                    站点探测
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="file_leak" checked value="true">
+                                                    目录扫描
+                                                </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="os_detection" value="true" disabled>
+                                                    操作系统识别
+                                                </label>
+                                                <p><span
+                                                        class="text-muted">说明：开启后会被WAF拦截, 开启需要 root 权限</span>
+                                                </p>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="site_capture" disabled value="true">
+                                                    站点截图
+                                                </label>
+                                                <p><span class="text-muted">暂不开启截图，耗费资源过大</span></p>
+                                            </div>
+                                        </div>
+                                        <!-- 更多选项... -->
+                                    </div>
+
+                                </div>
+                                <div class="col-sm-6">
+                                    <input type="submit" value="提交" class="btn btn-default float-right">
+                                </div>
+                                </br></br>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.card-body -->
+                </div>
+                <!-- /.card -->
+            </div>
+            <!-- /.col-md-6 -->
+            <!-- /.row -->
+        </form>
+    </div><!-- /.container-fluid -->
+    <!-- /.content -->
+</div>
+</div>
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}

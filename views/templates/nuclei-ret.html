@@ -1,0 +1,230 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> Nuclei 漏洞 </small></h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item active">Vul View</li>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <div class="content">
+        <div class="container">
+            <!-- card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Nuclei Ret</h3>
+                </div>
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <a href="/CheckQueue/{{ project_id }}" class="btn btn-default">检查队列</a>
+                    <a href="/Download/VulRet/{{ project_id }}" class="btn btn-default">导出结果</a>
+                    {% if project_id != 'ALL' %}
+                    <a href="/DelProject/{{ project_id }}" class="btn btn-danger">删除项目</a>
+                    {% endif %}
+                    <br><br>
+                    <table id="data-table" class="table table-bordered table-striped">
+                        <thead style="white-space: nowrap; text-align: center;">
+                        <tr>
+                            <th data-name="project_id">project_id</th>
+                            <th data-name="target">目标</th>
+                            <th data-name="vuln_url">漏洞地址</th>
+                            <th data-name="vuln_name">漏洞名称</th>
+                            <th data-name="vuln_severity">安全等级</th>
+                            <th data-name="template_id">模版ID</th>
+                            <th data-name="template_url">模版地址</th>
+                            <th data-name="curl_command">curl_command</th>
+                        </tr>
+                        </thead>
+                        <tbody style="white-space: nowrap; text-align: center;">
+                        <!-- Table data will be loaded dynamically using DataTables -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content -->
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}
+<script>
+    $(document).ready(function () {
+        const dataTable = $('#data-table').DataTable({
+            serverSide: true,
+            // Enable horizontal scrolling
+            scrollX: true,
+            // Enable shrinking table height on vertical scrolling
+            // scrollCollapse: true,
+            searching: false, // 禁用搜索
+            ordering: false, // 禁用排序
+            // Enable length change
+            lengthChange: true,
+            autoWidth: false,
+            ajax: {
+                url: '/Ajax/VulRet/{{ project_id }}',
+                type: 'GET',
+                // Data preprocessing (optional)
+                dataSrc: function (json) {
+                    // return json.data;
+                    return json.data.map(function (row) {
+                        // console.log(row)
+                        // Check if the 'column_name' cell is empty and replace it with a dash
+                        if (!row.project_id) {
+                            row.project_id = '-';
+                        }
+                        if (!row.template_url) {
+                            row.template_url = '-';
+                        }
+                        if (!row.template_id) {
+                            row.template_id = '-';
+                        }
+                        if (!row.vuln_name) {
+                            row.vuln_name = '-';
+                        }
+                        if (!row.vuln_severity) {
+                            row.vuln_severity = '-';
+                        }
+                        if (!row.vuln_url) {
+                            row.vuln_url = '-';
+                        }
+                        if (!row.curl_command) {
+                            row.curl_command = '-';
+                        }
+                        if (!row.target) {
+                            row.target = '-';
+                        }
+                        return row;
+                    });
+                }
+            },
+            columns: [
+                {
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
+                        return '<a href="/VulRet/' + row.project_id + '">' + row.project_id + '</a>';
+                    }, visible: false
+                },
+                // {data: 'target'},
+                {
+                    data: 'target',
+                    render: function (data) {
+                        let html = '';
+                        if (data && data.length > 0) {
+                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // {data: 'vuln_url'},
+                {
+                    data: 'vuln_url',
+                    render: function (data) {
+                        let html = '';
+                        if (data && data.length > 0) {
+                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // {data: 'vuln_name'},
+                {
+                    data: 'vuln_name',
+                    render: function (data) {
+                        let html = '';
+                        if (data && data.length > 0) {
+                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // {data: 'vuln_severity'},
+                {
+                    data: 'vuln_severity',
+                    render: function (data) {
+                        let html = '';
+                        if (data === 'critical') {
+                            html += '<p><span class="badge badge-danger">' + data + '</span></p>';
+                        } else if (data === 'high') {
+                            html += '<p><span class="badge badge-danger">' + data + '</span></p>';
+                        } else if (data === 'medium') {
+                            html += '<p><span class="badge badge-warning">' + data + '</span></p>';
+                        } else if (data === 'info') {
+                            html += '<p><span class="badge badge-success">' + data + '</span></p>'
+                        } else {
+                            html += '<p><span class="badge badge-secondary">' + data + '</span></p>';
+                        }
+                        return html;
+                    }
+                },
+                // {data: 'template_id'},
+                {
+                    data: 'template_id',
+                    render: function (data) {
+                        let html = '';
+                        if (data && data.length > 0) {
+                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // {data: 'template_url'},
+                {
+                    data: 'template_url',
+                    render: function (data) {
+                        let html = '';
+                        if (data && data.length > 0) {
+                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                {
+                    data: 'curl_command',
+                    render: function (data) {
+                        // 对 curl_command 进行 HTML 实体编码
+                        return $('<div/>').text(data).html();
+                    }, visible: false
+                }
+                // Add more columns as needed
+            ],
+            "language": //把文字变为中文
+                {
+                    "sProcessing": "加载中...",
+                    "sLengthMenu": "显示条数： _MENU_ ",
+                    "sZeroRecords": "没有匹配结果",
+                    "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                    "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                    "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                    "sInfoPostFix": "",
+                    "sSearch": "搜索:",
+                    "sUrl": "",
+                    "sEmptyTable": "表中数据为空",
+                    "sLoadingRecords": "载入中...",
+                    "sInfoThousands": ",",
+                    "oPaginate": {
+                        "sFirst": "<<", //首页
+                        "sPrevious": "<", //上一页
+                        "sNext": ">", //下一页
+                        "sLast": ">>" //尾页
+                    },
+                },
+            'aLengthMenu': [20, 50, 100, 500, 1000], //设置每页显示记录的下拉菜单
+        });
+    });
+</script>

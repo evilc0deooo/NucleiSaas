@@ -1,0 +1,131 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> 弱口令爆破 </small></h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item active">Weak Service</li>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+    <!-- Main content -->
+    <div class="content">
+        <div class="container">
+            <!-- card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Boom Ret</h3>
+                </div>
+                <!-- /.card-header -->
+                <div class="card-body">
+                    <a href="/CheckZombieQueue/{{ project_id }}" class="btn btn-default">检查队列</a>
+                    <a href="/Download/ZombieRet/{{ project_id }}" class="btn btn-default">导出结果</a>
+                    {% if project_id != 'ALL' %}
+                    <a href="/DelZombieProject/{{ project_id }}" class="btn btn-danger">删除项目</a>
+                    {% endif %}
+                    <br><br>
+                    <table id="data-table" class="table table-bordered table-striped">
+                        <thead style="white-space: nowrap; text-align: center;">
+                        <tr>
+                            <th data-name="project_id">project_id</th>
+                            <th data-name="ip">ip</th>
+                            <th data-name="port">port</th>
+                            <th data-name="service">service</th>
+                            <th data-name="username">username</th>
+                            <th data-name="password">password</th>
+                            <th data-name="ok">ok</th>
+                        </tr>
+                        </thead>
+                        <tbody style="white-space: nowrap; text-align: center;">
+                        <!-- Table data will be loaded dynamically using DataTables -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content -->
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}
+<script>
+    $(document).ready(function () {
+        const dataTable = $('#data-table').DataTable({
+            serverSide: true,
+            // Enable horizontal scrolling
+            scrollX: true,
+            // Enable shrinking table height on vertical scrolling
+            // scrollCollapse: true,
+            searching: false, // 禁用搜索
+            ordering: false, // 禁用排序
+            // Enable length change
+            lengthChange: true,
+            autoWidth: false,
+            ajax: {
+                url: '/Ajax/ZombieRet/{{ project_id }}',
+                type: 'GET',
+                // Data preprocessing (optional)
+                dataSrc: function (json) {
+                    // return json.data;
+                    return json.data.map(function (row) {
+                        console.log(row)
+                        // Check if the 'column_name' cell is empty and replace it with a dash
+                        return row;
+                    });
+                }
+            },
+            columns: [
+                {
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
+                        return '<a href="/ZombieRet/' + row.project_id + '">' + row.project_id + '</a>';
+                    }, visible: false
+                },
+                {data: 'ip'},
+                {data: 'port'},
+                {data: 'service'},
+                {data: 'username'},
+                {data: 'password'},
+                {data: 'ok'},
+
+                // Add more columns as needed
+            ],
+            "language": //把文字变为中文
+                {
+                    "sProcessing": "加载中...",
+                    "sLengthMenu": "显示条数： _MENU_ ",
+                    "sZeroRecords": "没有匹配结果",
+                    "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+                    "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+                    "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+                    "sInfoPostFix": "",
+                    "sSearch": "搜索:",
+                    "sUrl": "",
+                    "sEmptyTable": "表中数据为空",
+                    "sLoadingRecords": "载入中...",
+                    "sInfoThousands": ",",
+                    "oPaginate": {
+                        "sFirst": "<<", //首页
+                        "sPrevious": "<", //上一页
+                        "sNext": ">", //下一页
+                        "sLast": ">>" //尾页
+                    },
+                },
+            'aLengthMenu': [20, 50, 100, 500, 1000], //设置每页显示记录的下拉菜单
+        });
+    });
+</script>
