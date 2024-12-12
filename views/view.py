@@ -675,6 +675,7 @@ def api_newtask():
         site_identify = request.form.get('site_identify')
         site_capture = request.form.get('site_capture')
         file_leak = request.form.get('file_leak')
+        only_file_leak = request.form.get('only_file_leak')
         if not project_name:
             flash('请输入项目名称')
             return redirect(url_for('api_newtask'))
@@ -702,6 +703,7 @@ def api_newtask():
             'site_identify': site_identify,
             'site_capture': site_capture,
             'file_leak': file_leak,
+            'only_file_leak': only_file_leak,
         }
 
         headers = {'token': api_token, 'accept': 'application/json'}

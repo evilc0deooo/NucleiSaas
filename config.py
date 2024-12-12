@@ -15,12 +15,12 @@ class Config(object):
     REDIS_DB = 1
     # zombie 扫描队列
     REDIS_DB2 = 2
-    REDIS_PWD = os.getenv('REDIS_PWD', 'redis_password')  # 避免特殊字符
+    REDIS_PWD = os.getenv('REDIS_PWD', 'Redis99FUCK_TOMCAT678')  # 避免特殊字符
 
     # mongo 数据集结果展示
     MONGO_HOST = os.getenv('MONGO_HOST', '127.0.0.1')
     MONGO_PORT = os.getenv('MONGO_PORT', '27017')
-    MONGO_PWD = os.getenv('MONGO_PWD', 'mongo_password')  # 避免特殊字符
+    MONGO_PWD = os.getenv('MONGO_PWD', 'Pa33w0rdQWERT_SB')  # 避免特殊字符
     MONGO_DB = 'teamwork'
     MONGO_USERNAME = 'admin'
     MONGO_AUTH_DB = 'admin'

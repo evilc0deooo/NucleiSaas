@@ -37,7 +37,7 @@
                                         <div class="form-group">
                                             <label>* 目标资产</label>
                                             <textarea class="form-control" rows="7" name="target" value=""
-                                                      placeholder="请输入域名或IP目标支持换行输入"></textarea>
+                                                      placeholder="请输入域名或IP目标支持换行输入（如果选中仅扫描目录请输入带有http协议的url，建议最多一次添加约3000条）"></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label for="exampleSelect1">域名爆破字典</label>
@@ -132,6 +132,15 @@
                                                     <input type="checkbox" name="file_leak" checked value="true">
                                                     目录扫描
                                                 </label>
+                                            </div>
+                                            <div class="checkbox">
+                                                <label>
+                                                    <input type="checkbox" name="only_file_leak" value="true">
+                                                    仅目录扫描
+                                                </label>
+                                                <p><span
+                                                        class="text-muted">说明：开启后会其他功能模块都会跳过扫描</span>
+                                                </p>
                                             </div>
                                             <div class="checkbox">
                                                 <label>
