@@ -4,6 +4,11 @@
 
 此框架适用于任何基于命令行的扫描器。
 
+## 免责声明
+
+本工具仅限授权安全测试使用，禁止非法攻击未授权站点。
+请使用者遵守《中华人民共和国网络安全法》，勿将本项目用于未授权的测试，参与本项目的开发成员不负任何连带法律责任。
+
 ### 功能逻辑设计
 
 NucleiPlatform 扫描模块
@@ -77,7 +82,7 @@ screen python3 nuclei_agent.py
 screen python3 zombie_agent.py
 ```
 
-## 界面
+## Demo
 
 ![img.png](images/img.png)
 
