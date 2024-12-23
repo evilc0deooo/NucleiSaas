@@ -76,3 +76,16 @@ __运行 Scan Agent__
 screen python3 nuclei_agent.py
 screen python3 zombie_agent.py
 ```
+
+## 界面
+
+![img.png](images/img.png)
+
+![img.png](images/img_3.png)
+
+![img.png](images/img2.png)
+
+![img.png](images/img_1.png)
+
+![img.png](images/img_2.png)
+
