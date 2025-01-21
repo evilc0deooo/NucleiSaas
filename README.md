@@ -23,17 +23,18 @@ AssetsDetectAPI 资产收集模块
 —> 支持 celery 分布式任务调度。
 —> 支持对资产进行项目分组，主要功能流程域名收集（域名爆破和网络测绘）、端口扫描、站点查询、指纹识别、服务识别、证书信息、站点截图、目录扫描。
 
+__主控端服务器建议最低使用 4h8g VPS 服务器，客户端服务器最低使用 4h4g，画的图有偏差因为中途修改了扫描逻辑。__
+
 ![img_4.png](images/img_4.png)
 
 ### 项目部署
 
-建议主控端服务器最低使用 4h4g VPS 服务器
 测试环境： Ubuntu 24.04.1 LTS 、Python 3.12.3
 正常来说会上下兼容，其他操作系统未进行测试（暂且不支持 Windows 系统部署）。
 
 #### 主控端机器
 
-__安装基础依赖__
+##### 安装基础依赖
 
 ```bash
 apt update 
@@ -42,7 +43,7 @@ git clone https://github.com/evilc0deooo/NucleiPlatform.git && cd NucleiPlatform
 python3 -m pip install -r requirements.txt --user --break-system-packages
 ```
 
-__永久修改控制文件描述符限制__
+##### 永久修改控制文件描述符限制
 
 将下面的 BASH SHELL 脚本保存到服务器并命名为 `init.sh`。
 
@@ -84,7 +85,7 @@ bash init.sh
 
 如果永久修改控制文件描述符限制，需要关闭终端重新打开，并用 `ulimit -n` 命令来查看是否修改成功。
 
-__临时修改控制文件描述符限制__
+##### 临时修改控制文件描述符限制
 
 如果不想重开终端，执行下面的命令即可，并用 `ulimit -n` 命令来查看是否修改成功。
 
@@ -92,14 +93,14 @@ __临时修改控制文件描述符限制__
 ulimit -n 65535
 ```
 
-__创建启动 Redis 容器__
+##### 创建启动 Redis 容器
 
 ```bash
 docker pull redis:latest
 docker run -d --name redis -p 6379:6379 redis:latest --requirepass "redis_password"
 ```
 
-__创建启动 Mongo 容器__
+##### 创建启动 Mongo 容器
 
 ```bash
 docker pull mongo
@@ -111,7 +112,7 @@ docker run -d \
   mongo
 ```
 
-__修改配置__
+##### 修改配置
 
 修改 config.py 文件中的配置。
 
@@ -128,7 +129,7 @@ MONGO_PORT -> Mongo 主机端口
 MONGO_PWD -> Mongo 密码
 ```
 
-__启动 Nuclei Web 服务__
+##### 启动 Nuclei Web 服务
 
 ```bash
 screen python3 app.py
