@@ -1,5 +1,7 @@
 # NucleiPlatform
 
+Nuclei SaaS 化服务并集成了资产扫描系统。
+
 ## nuclei-scan 分布式扫描系统
 
 此框架适用于任何基于命令行的扫描器。
@@ -12,19 +14,39 @@
 ### 功能逻辑设计
 
 NucleiPlatform 扫描模块
-—> 逻辑设计简单，随时添加目标资产，针对大量资产进行无脑扫描。
+—> 逻辑设计简单，随时添加目标资产，针对大量资产进行扫描。
 —> 支持对资产进行项目分组。
-—> 至少两至三台机器去做 Nuclei 分布式扫描。
+—> 至少两至三台机器去做 Nuclei Agent 分布式扫描。
 —> 支持对节点状态，扫描队列的查询。
 
 AssetsDetectAPI 资产收集模块
 —> 支持 celery 分布式任务调度。
 —> 支持对资产进行项目分组，主要功能流程域名收集（域名爆破和网络测绘）、端口扫描、站点查询、指纹识别、服务识别、证书信息、站点截图、目录扫描。
 
+![img_4.png](images/img_4.png)
+
 ### 项目部署
 
-__修改控制文件描述符限制__
+建议主控端服务器最低使用 4h4g VPS 服务器
+测试环境： Ubuntu 24.04.1 LTS 、Python 3.12.3
+正常来说会上下兼容，其他操作系统未进行测试（暂且不支持 Windows 系统部署）。
+
+#### 主控端机器
+
+__安装基础依赖__
+
 ```bash
+apt update 
+apt install python3 python3-dev gcc nmap gunicorn screen
+git clone https://github.com/evilc0deooo/NucleiPlatform.git && cd NucleiPlatform
+python3 -m pip install -r requirements.txt --user --break-system-packages
+```
+
+__永久修改控制文件描述符限制__
+
+将下面的 BASH SHELL 脚本保存到服务器并命名为 `init.sh`。
+
+```shell
 #!/bin/bash
 
 # 系统
@@ -54,13 +76,31 @@ sudo sed -i '/DefaultLimitNOFILE/c DefaultLimitNOFILE=65535' /etc/systemd/*.conf
 sudo systemctl daemon-reexec
 ```
 
+执行保存的 BASH SHELL 脚本。
+```bash
+chmod u+x init.sh
+bash init.sh
+```
+
+如果永久修改控制文件描述符限制，需要关闭终端重新打开，并用 `ulimit -n` 命令来查看是否修改成功。
+
+__临时修改控制文件描述符限制__
+
+如果不想重开终端，执行下面的命令即可，并用 `ulimit -n` 命令来查看是否修改成功。
+
+```bash
+ulimit -n 65535
+```
+
 __创建启动 Redis 容器__
+
 ```bash
 docker pull redis:latest
 docker run -d --name redis -p 6379:6379 redis:latest --requirepass "redis_password"
 ```
 
 __创建启动 Mongo 容器__
+
 ```bash
 docker pull mongo
 docker run -d \
@@ -71,18 +111,56 @@ docker run -d \
   mongo
 ```
 
-__启动 Web__
+__修改配置__
+
+修改 config.py 文件中的配置。
+
+```
+AUTH_USERNAME -> 平台认证账户
+AUTH_PASSWORD -> 平台认证密码
+
+REDIS_HOST -> Redis 主机 IP
+REDIS_PORT -> Redis 主机端口
+REDIS_PWD -> Redis 密码
+
+MONGO_HOST -> Mongo 主机 IP
+MONGO_PORT -> Mongo 主机端口
+MONGO_PWD -> Mongo 密码
+```
+
+__启动 Nuclei Web 服务__
+
 ```bash
 screen python3 app.py
 ```
 
-__运行 Scan Agent__
+#### Agent 客户端机器
+
+Agent 客户端服务器需要重复操作上面的安装流程（**⚠️注意：不需要重复安装 Docker 内的数据库相关服务**）。
+
+__修改配置__
+
+修改 `config.py` 文件中的数据库相关配置让其可连接主控端。
+
+```
+REDIS_HOST -> 主控端 Redis 主机 IP
+REDIS_PORT -> 主控端 Redis 主机端口
+REDIS_PWD -> 主控端 Redis 密码
+
+MONGO_HOST -> 主控端 Mongo 主机 IP
+MONGO_PORT -> 主控端 Mongo 主机端口
+MONGO_PWD -> 主控端 Mongo 密码
+```
+
+__运行 Nuclei Agent 客户端__
+
 ```bash
+cd NucleiPlatform
 screen python3 nuclei_agent.py
 screen python3 zombie_agent.py
 ```
 
-## Demo
+## 系统界面 DEMO
 
 ![img.png](images/img.png)
 
