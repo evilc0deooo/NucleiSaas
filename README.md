@@ -38,7 +38,7 @@ __主控端服务器建议最低使用 4h8g VPS 服务器，客户端服务器�
 
 ```bash
 apt update 
-apt install python3 python3-dev gcc nmap gunicorn screen
+apt install python3 python3-dev python3-pip gcc nmap gunicorn screen
 git clone https://github.com/evilc0deooo/NucleiPlatform.git && cd NucleiPlatform
 python3 -m pip install -r requirements.txt --user --break-system-packages
 ```
