@@ -7,11 +7,11 @@
         <div class="container">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0"><small> Agent 节点 </small></h1>
+                    <h1 class="m-0"><small> 用户管理 </small></h1>
                 </div><!-- /.col -->
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item active">Check Nodes</li>
+                        <li class="breadcrumb-item active">Users Manage</li>
                     </ol>
                 </div><!-- /.col -->
             </div><!-- /.row -->
@@ -24,16 +24,20 @@
             <!-- card -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Check Nodes</h3>
+                    <h3 class="card-title">Users Manage</h3>
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body">
+                    <a href="/Register" class="btn btn-default">注册用户</a>
+                    <br><br>
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center;">
                         <tr>
-                            <th data-name="id">ID</th>
-                            <th data-name="node_name">节点名称</th>
-                            <th data-name="date">回连时间</th>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>权限组</th>
+                            <th>创建时间</th>
+                            <th>选项</th>
                         </tr>
                         </thead>
                         <tbody style="white-space: nowrap; text-align: center;">
@@ -54,69 +58,52 @@
 <script>
     $(document).ready(function () {
         const dataTable = $('#data-table').DataTable({
-            serverSide: true,
-            // Enable horizontal scrolling
+            processing: true, // 显示加载中提示
+            serverSide: true, // 启用服务器端处理
+            // 启用水平滚动
             scrollX: true,
-            // Enable shrinking table height on vertical scrolling
-            // scrollCollapse: true,
+            // 启用垂直滚动时缩小表格高度
+            scrollCollapse: false,
             searching: false, // 禁用搜索
             ordering: false, // 禁用排序
-            // Enable length change
+            // 启用长度更改
             lengthChange: true,
             autoWidth: false,
+            pagingType: 'full_numbers', //显示首页尾页
+
             ajax: {
-                url: '/Ajax/CheckNodes',
+                url: '/Ajax/GetUsers',
                 type: 'GET',
-                dataSrc: function (json) {
-                    // return json.data;
-                    return json.data.map(function (row) {
-                        // console.log(row)
-                        // Check if the 'column_name' cell is empty and replace it with a dash
-                        if (!row.id) {
-                            row.id = '-';
-                        }
-                        if (!row.node_name) {
-                            row.node_name = '-';
-                        }
-                        if (!row.date) {
-                            row.date = '-';
-                        }
-                        return row;
-                    });
-                }
+                data: function (d) {
+                    return d;
+                },
             },
             columns: [
-                // {data: 'id'},
+                // 对应 API 返回的数据字段
+                // {data: 'user_id'},
+                {data: 'username'},
+                {data: 'email'},
+                // {data: 'purview'},
                 {
-                    data: 'id',
+                    data: 'purview',
                     render: function (data) {
                         let html = '';
-                        if (data) {
-                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
-                            return html;
+                        if ('1' in data) {
+                            html += '超级管理员</p>'
+                        } else {
+                            html += '普通用户</p>';
                         }
-                    }, visible: false
-                },
-                // {data: 'node_name'},
-                {
-                    data: 'node_name',
-                    render: function (data) {
-                        let html = '';
-                        if (data) {
-                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
-                            return html;
-                        }
+                        return html;
                     }
                 },
-                // {data: 'date'},
+                {data: 'create_date'},
                 {
-                    data: 'date',
-                    render: function (data) {
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
                         let html = '';
-                        if (data) {
-                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
-                            return html;
-                        }
+                        html += '<a href="/DelUser/' + row.user_id + '" class="btn btn-sm btn-danger">删除</a>'
+                        return html
                     }
                 },
                 // Add more columns as needed
@@ -144,5 +131,11 @@
                 },
             'aLengthMenu': [20, 50, 100, 500, 1000], //设置每页显示记录的下拉菜单
         });
+        // 监听表单提交事件
+        $('#searchForm').on('submit', function (event) {
+            event.preventDefault(); // 阻止表单默认提交行为
+            dataTable.ajax.reload(); // 重新加载 DataTables 数据
+        });
     });
+
 </script>

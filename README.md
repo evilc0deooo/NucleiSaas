@@ -75,6 +75,8 @@ EOF
 # grep -rn -F "DefaultLimitNOFILE"
 sudo sed -i '/DefaultLimitNOFILE/c DefaultLimitNOFILE=65535' /etc/systemd/*.conf
 sudo systemctl daemon-reexec
+# 当前终端修改控制文件描述符限制
+sudo ulimit -n 65535
 ```
 
 执行保存的 BASH SHELL 脚本。
@@ -90,7 +92,7 @@ bash init.sh
 如果不想重开终端，执行下面的命令即可，并用 `ulimit -n` 命令来查看是否修改成功。
 
 ```bash
-ulimit -n 65535
+sudo ulimit -n 65535
 ```
 
 ##### 创建启动 Redis 容器

@@ -31,38 +31,32 @@
                                     <div class="form-group">
                                         <div class="form-group">
                                             <label>* 项目名称</label>
-                                            <input type="text" class="form-control" name="project_name" value=""
-                                                   placeholder="请输入项目名称">
+                                            <input type="text" class="form-control" name="project_name" value="" placeholder="请输入项目名称">
                                         </div>
                                         <div class="form-group">
                                             <label>项目描述</label>
-                                            <textarea class="form-control" rows="2" name="project_description"
-                                                      placeholder="请输入项目描述"></textarea>
+                                            <textarea class="form-control" rows="2" name="project_description" placeholder="请输入项目描述"></textarea>
                                         </div>
                                         <div class="form-group">
-                                            <label>* Nuclei Yaml 模版</label>
-                                            <p><span class="text-muted">参考https://github.com/projectdiscovery/nuclei-templates/tree/main/http仓库下的模版路径（仅支持http类型）</span></p>
-                                            <input type="text" class="form-control" name="nuclei_template_yaml"
-                                                   value="nuclei-templates/http"
-                                                   placeholder="请输入指定要运行的模板或者模板目录（以逗号分隔或目录形式）">
+                                            <label>* Nuclei YAML 模版</label>
+                                            <p><span class="text-muted">参考<a href="https://github.com/projectdiscovery/nuclei-templates">ProjectDiscovery</a>官方仓库下的Nuclei YAML文件（支持只输入YAML文件名并以逗号分隔）</span>
+                                            </p>
+                                            <input type="text" class="form-control" name="nuclei_template_yaml" value="nuclei-templates" placeholder="请输入指定要运行的模板名称或者模板目录（以逗号分隔或目录形式）">
                                         </div>
                                         <div class="form-group">
-                                            <label>Nuclei Yaml 模版标签过滤 -tags（可选项）</label>
-                                            <input type="text" class="form-control" name="nuclei_template_tags" value=""
-                                                   placeholder="执行带指定tag的模板（以逗号分隔多个标签）">
+                                            <label>Nuclei YAML 模版标签过滤 -tags（可选项）</label>
+                                            <input type="text" class="form-control" name="nuclei_template_tags" value="" placeholder="执行带指定tag的模板（以逗号分隔多个标签）">
                                         </div>
                                         <div class="form-group">
                                             <label>Nuclei 代理 -proxy（可选项）</label>
-                                            <input type="text" class="form-control" name="nuclei_proxy" value=""
-                                                   placeholder="使用 http/socks5 代理列表（以逗号分隔多个代理）">
+                                            <input type="text" class="form-control" name="nuclei_proxy" value="" placeholder="使用 http/socks5 代理列表（以逗号分隔多个代理）">
                                         </div>
                                         <div class="form-group">
-                                            <label>* Nuclei Yaml 根据漏洞严重程度运行模板 -severity</label>
+                                            <label>* Nuclei YAML 根据漏洞严重程度运行模板 -severity</label>
                                             <p><span class="text-muted">如果选择了指定单独YAML模版漏洞安全等级默认全选即可，如果指定的漏洞模版目录建议只选择致命漏洞和高危漏洞</span></p>
                                             <div class="checkbox">
                                                 <label>
-                                                    <input type="checkbox" name="severity_critical" checked
-                                                           value="critical">
+                                                    <input type="checkbox" name="severity_critical" checked value="critical">
                                                     致命载荷
                                                 </label>
                                             </div>
@@ -74,8 +68,7 @@
                                             </div>
                                             <div class="checkbox">
                                                 <label>
-                                                    <input type="checkbox" name="severity_medium" checked
-                                                           value="medium">
+                                                    <input type="checkbox" name="severity_medium" checked value="medium">
                                                     中危载荷
                                                 </label>
                                             </div>
@@ -95,13 +88,12 @@
                                         <!-- 更多选项... -->
                                     </div>
                                     <div class="form-group">
-                                        <label>* 站点列表</label>
-                                        <textarea class="form-control" rows="15" name="sites" value=""
-                                                  placeholder="请输入目标资产支持换行输入多个域名（域名支持带协议头形式）"></textarea>
+                                        <label>* 目标列表</label>
+                                        <textarea class="form-control" rows="15" name="sites" placeholder="请输入目标资产支持换行输入多个目标（域名支持带协议头形式）"></textarea>
                                     </div>
                                 </div>
                                 <div class="col-sm-7">
-                                    <input type="submit" value="提交扫描任务" class="btn btn-default float-right">
+                                    <input type="submit" value="提交任务" class="btn btn-default float-right">
                                 </div>
                                 </br></br>
                             </div>
@@ -113,7 +105,6 @@
             </div>
             <!-- /.col-md-6 -->
             <!-- /.row -->
-    </div><!-- /.container-fluid -->
     <!-- /.content -->
     </form>
 </div>

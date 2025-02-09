@@ -9,6 +9,8 @@ import shlex
 import string
 import subprocess
 import time
+import re
+import socket
 from datetime import datetime
 
 base_directory = pathlib.Path(__file__).parent.parent
@@ -22,10 +24,8 @@ ZOMBIE_ARM_BIN = os.path.join(base_directory, 'thirdparty/zombie_tools/zombie_da
 ZOMBIE_UNIX_BIN = os.path.join(base_directory, 'thirdparty/zombie_tools/zombie_linux_amd64')
 
 # 导出数据集
-MONGOEXPORT_ARM_BIN = os.path.join(base_directory,
-                                   'thirdparty/mongo_tools/mongodb-database-tools-macos-arm64-100.9.5/bin/mongoexport')
-MONGOEXPORT_UNIX_BIN = os.path.join(base_directory,
-                                    'thirdparty/mongo_tools/mongodb-database-tools-ubuntu2204-x86_64-100.9.5/bin/mongoexport')
+MONGOEXPORT_ARM_BIN = os.path.join(base_directory, 'thirdparty/mongo_tools/mongodb-database-tools-macos-arm64-100.9.5/bin/mongoexport')
+MONGOEXPORT_UNIX_BIN = os.path.join(base_directory, 'thirdparty/mongo_tools/mongodb-database-tools-ubuntu2204-x86_64-100.9.5/bin/mongoexport')
 
 TMP_PATH = os.path.join(base_directory, 'thirdparty/tmp')
 if not os.path.exists(TMP_PATH):
@@ -63,11 +63,11 @@ def curr_date():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
-# def curr_date(secs):
-#     """
-#     获取当前时间
-#     """
-#     return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(secs))
+def curr_date_two(secs):
+    """
+    获取当前时间
+    """
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(secs))
 
 
 def exec_system(cmd, **kwargs):
@@ -78,8 +78,7 @@ def exec_system(cmd, **kwargs):
         timeout = kwargs['timeout']
         kwargs.pop('timeout')
 
-    completed = subprocess.run(shlex.split(cmd), timeout=timeout, check=False, close_fds=True, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, **kwargs)
+    completed = subprocess.run(shlex.split(cmd), timeout=timeout, check=False, close_fds=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs)
 
     # 判断命令执行是否失败
     if completed.returncode != 0:
@@ -113,3 +112,57 @@ def get_architecture():
         return '64-bit Intel/AMD'
     else:
         return '32-bit Intel/AMD'
+
+
+def target2list(target):
+    target = target.strip().lower()
+    target_lists = re.split(r',|\s', target)
+    # 清除空白符
+    target_lists = list(filter(None, target_lists))
+    target_lists = list(set(target_lists))
+
+    return target_lists
+
+
+def dict2list(target):
+    target = target.strip()
+    target_lists = re.split(r',|\s', target)
+    # 清除空白符
+    target_lists = list(filter(None, target_lists))
+    target_lists = list(set(target_lists))
+
+    return target_lists
+
+
+def read_file_in_batches(file_path, batch_size=10000):
+    """
+    针对大量数据使用文件上传方式
+    batch_size 默认每次批量处理 10000 条数据
+    """
+    with open(file_path, 'r') as file:
+        batch = []
+        for line in file:
+            url = line.strip()
+            if url:
+                batch.append(url)
+                if len(batch) >= batch_size:
+                    yield batch
+                    batch = []
+        if batch:
+            yield batch
+
+
+def get_local_ip():
+    """
+    获取机器 IP
+    """
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # 连接到一个公共的 DNS 服务器地址（这里用 Google 的公共 DNS）
+        s.connect(("8.8.8.8", 80))
+        # 获取本地 IP 地址
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except OSError:
+        return None

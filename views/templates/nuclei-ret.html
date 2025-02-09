@@ -31,13 +31,13 @@
                     <a href="/CheckQueue/{{ project_id }}" class="btn btn-default">检查队列</a>
                     <a href="/Download/VulRet/{{ project_id }}" class="btn btn-default">导出结果</a>
                     {% if project_id != 'ALL' %}
-                    <a href="/DelProject/{{ project_id }}" class="btn btn-danger">删除项目</a>
+                    <a href="/DelQueue/{{ project_id }}" class="btn btn-primary">清空队列(仅该项目)</a>
+                    <a href="/DelProject/{{ project_id }}" class="btn btn-secondary">删除项目(会清空数据)</a>
                     {% endif %}
                     <br><br>
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center;">
                         <tr>
-                            <th data-name="project_id">project_id</th>
                             <th data-name="target">目标</th>
                             <th data-name="vuln_url">漏洞地址</th>
                             <th data-name="vuln_name">漏洞名称</th>
@@ -66,27 +66,16 @@
     $(document).ready(function () {
         const dataTable = $('#data-table').DataTable({
             serverSide: true,
-            // Enable horizontal scrolling
             scrollX: true,
-            // Enable shrinking table height on vertical scrolling
-            // scrollCollapse: true,
             searching: false, // 禁用搜索
             ordering: false, // 禁用排序
-            // Enable length change
             lengthChange: true,
             autoWidth: false,
             ajax: {
                 url: '/Ajax/VulRet/{{ project_id }}',
                 type: 'GET',
-                // Data preprocessing (optional)
                 dataSrc: function (json) {
-                    // return json.data;
                     return json.data.map(function (row) {
-                        // console.log(row)
-                        // Check if the 'column_name' cell is empty and replace it with a dash
-                        if (!row.project_id) {
-                            row.project_id = '-';
-                        }
                         if (!row.template_url) {
                             row.template_url = '-';
                         }
@@ -113,13 +102,6 @@
                 }
             },
             columns: [
-                {
-                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
-                    data: null,
-                    render: function (data, type, row) {
-                        return '<a href="/VulRet/' + row.project_id + '">' + row.project_id + '</a>';
-                    }, visible: false
-                },
                 // {data: 'target'},
                 {
                     data: 'target',

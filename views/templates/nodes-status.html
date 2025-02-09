@@ -7,11 +7,11 @@
         <div class="container">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0"><small> 弱口令爆破 </small></h1>
+                    <h1 class="m-0"><small> Agent 节点 </small></h1>
                 </div><!-- /.col -->
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item active">Weak Password Service</li>
+                        <li class="breadcrumb-item active">Check Nodes</li>
                     </ol>
                 </div><!-- /.col -->
             </div><!-- /.row -->
@@ -24,25 +24,17 @@
             <!-- card -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Boom Ret</h3>
+                    <h3 class="card-title">Check Nodes</h3>
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body">
-                    <a href="/CheckZombieQueue/{{ project_id }}" class="btn btn-default">检查队列</a>
-                    <a href="/Download/ZombieRet/{{ project_id }}" class="btn btn-default">导出结果</a>
-                    {% if project_id != 'ALL' %}
-                    <a href="/DelZombieQueue/{{ project_id }}" class="btn btn-primary">清空队列(仅该项目)</a>
-                    <a href="/DelZombieProject/{{ project_id }}" class="btn btn-danger">删除项目(会清空数据)</a>
-                    {% endif %}
-                    <br><br>
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center;">
                         <tr>
-                            <th data-name="ip">IP地址</th>
-                            <th data-name="port">端口</th>
-                            <th data-name="service">服务</th>
-                            <th data-name="username">账户</th>
-                            <th data-name="password">密码</th>
+                            <th data-name="id">ID</th>
+                            <th data-name="node_name">节点名称</th>
+                            <th data-name="local_ip">机器 IP</th>
+                            <th data-name="date">回连时间</th>
                         </tr>
                         </thead>
                         <tbody style="white-space: nowrap; text-align: center;">
@@ -64,76 +56,54 @@
     $(document).ready(function () {
         const dataTable = $('#data-table').DataTable({
             serverSide: true,
+            // Enable horizontal scrolling
             scrollX: true,
+            // Enable shrinking table height on vertical scrolling
+            // scrollCollapse: true,
             searching: false, // 禁用搜索
             ordering: false, // 禁用排序
+            // Enable length change
             lengthChange: true,
             autoWidth: false,
             ajax: {
-                url: '/Ajax/ZombieRet/{{ project_id }}',
+                url: '/Ajax/CheckNodes',
                 type: 'GET',
                 dataSrc: function (json) {
+                    // return json.data;
                     return json.data.map(function (row) {
+                        // console.log(row)
+                        // Check if the 'column_name' cell is empty and replace it with a dash
+                        if (!row.id) {
+                            row.id = '-';
+                        }
+                        if (!row.node_name) {
+                            row.node_name = '-';
+                        }
+                        if (!row.local_ip) {
+                            row.local_ip = '-';
+                        }
+                        if (!row.date) {
+                            row.date = '-';
+                        }
                         return row;
                     });
                 }
             },
             columns: [
-                // {data: 'ip'},
+                // {data: 'id'},
                 {
-                    data: 'ip',
+                    data: 'id',
                     render: function (data) {
                         let html = '';
-                        if (data && data.length > 0) {
+                        if (data) {
                             html += '<p><span class="badge badge-dark">' + data + '</span></p>'
                             return html;
                         }
-                    }
+                    }, visible: false
                 },
-                // {data: 'port'},
-                {
-                    data: 'port',
-                    render: function (data) {
-                        let html = '';
-                        if (data && data.length > 0) {
-                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
-                            return html;
-                        }
-                    }
-                },
-                // {data: 'service'},
-                {
-                    data: 'service',
-                    render: function (data) {
-                        let html = '';
-                        if (data && data.length > 0) {
-                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
-                            return html;
-                        }
-                    }
-                },
-                // {data: 'username'},
-                {
-                    data: 'username',
-                    render: function (data) {
-                        let html = '';
-                        if (data && data.length > 0) {
-                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
-                            return html;
-                        }
-                    }
-                },
-                // {data: 'password'},
-                {
-                    data: 'password',
-                    render: function (data) {
-                        let html = '';
-                        if (data && data.length > 0) {
-                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
-                            return html;
-                        }
-                    }
-                }
+                {data: 'node_name'},
+                {data: 'local_ip'},
+                {data: 'date'}
             ],
             "language": //把文字变为中文
                 {

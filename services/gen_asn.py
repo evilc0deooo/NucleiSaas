@@ -3,7 +3,7 @@
 import json
 import os
 import thirdparty
-from services.logger import logger
+from common.logger import logger
 
 """
 Debian 10 / Ubuntu 20.04 (或更新版本): apt -y install curl whois bind9-host mtr-tiny jq ipcalc grepcidr nmap ncat aha

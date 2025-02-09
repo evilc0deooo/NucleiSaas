@@ -5,8 +5,8 @@ import time
 import json
 import thirdparty
 from concurrent.futures import ThreadPoolExecutor
-from services.mongo import conn_db
-from services.logger import logger
+from common.mongo import conn_db
+from common.logger import logger
 from config import Config
 
 
@@ -24,21 +24,41 @@ class NucleiScan(object):
         self.poc_yaml_list = nuclei_template_yaml.split(',')
         self.tags_list = tags.split(',')
         self.severity_list = severity.split(',')
-        self.nuclei_template = ','.join([thirdparty.NUCLEI_YAML + '/' + item.strip() for item in self.poc_yaml_list])
+        self.nuclei_template = thirdparty.NUCLEI_YAML
         self.nuclei_tags = ','.join([item.strip() for item in self.tags_list])
         self.nuclei_severity = ','.join([item.strip() for item in self.severity_list])
         self.proxy = proxy.rstrip('/')  # Nuclei 扫描代理
         self.nuclei_rate = 500  # Nuclei 并发线程
+        self.poc_template_list = []
         os.chmod(self.nuclei_bin, 0o777)
 
+    def find_file_recursively(self, poc_templates, search_dirs):
+        """
+        通过 YAML POC 文件名称获取绝对路径
+        """
+        if '.yaml' not in poc_templates or 'nuclei-templates' in poc_templates:
+            return search_dirs + '/' + poc_templates
+        for root, dirs, files in os.walk(self.nuclei_template):
+            if poc_templates in files:
+                return os.path.join(root, poc_templates)
+
+        return None
+
     def nuclei_scan(self, target):
+
+        for filename in self.poc_yaml_list:
+            yaml_poc_name = self.find_file_recursively(filename.strip(), self.nuclei_template)
+            # Yaml POC 文件存在则加入到列表
+            if yaml_poc_name:
+                self.poc_template_list.append(yaml_poc_name)
+
+        scan_nuclei_template = ','.join(item for item in set(self.poc_template_list))
         # 判断是否通过 tags 来过滤 Yaml POC 文件
         if self.nuclei_tags:
             if self.proxy:
                 cmd_parameters = [self.nuclei_bin, '-duc ',
-                                  '-type http ',
                                   f'-u {target} ',
-                                  f'-t {self.nuclei_template} ',
+                                  f'-t {scan_nuclei_template} ',
                                   f'-severity {self.nuclei_severity} ',
                                   f'-tags {self.nuclei_tags} ',
                                   '-jsonl ',
@@ -51,9 +71,8 @@ class NucleiScan(object):
                                   ]
             else:
                 cmd_parameters = [self.nuclei_bin, '-duc ',
-                                  '-type http ',
                                   f'-u {target} ',
-                                  f'-t {self.nuclei_template} ',
+                                  f'-t {scan_nuclei_template} ',
                                   f'-severity {self.nuclei_severity} ',
                                   f'-tags {self.nuclei_tags} ',
                                   '-jsonl ',
@@ -66,9 +85,8 @@ class NucleiScan(object):
         else:
             if self.proxy:
                 cmd_parameters = [self.nuclei_bin, '-duc ',
-                                  '-type http ',
                                   f'-u {target} ',
-                                  f'-t {self.nuclei_template} ',
+                                  f'-t {scan_nuclei_template} ',
                                   f'-severity {self.nuclei_severity} ',
                                   '-jsonl ',
                                   '-max-host-error 20 ',
@@ -80,9 +98,8 @@ class NucleiScan(object):
                                   ]
             else:
                 cmd_parameters = [self.nuclei_bin, '-duc ',
-                                  '-type http ',
                                   f'-u {target} ',
-                                  f'-t {self.nuclei_template} ',
+                                  f'-t {scan_nuclei_template} ',
                                   f'-severity {self.nuclei_severity} ',
                                   '-jsonl ',
                                   '-max-host-error 20 ',
@@ -124,6 +141,7 @@ class NucleiScan(object):
                     continue
 
                 try:
+                    # print(item)
                     conn_db('nuclei_ret').insert_one(item)
                 except Exception as e:
                     logger.error(f'Nuclei 漏洞结果写入数据库发生异常自动跳过 -> {item}.')
@@ -161,5 +179,5 @@ def run(project_id, _sites, nuclei_template_yaml, tags, severity, proxy):
 if __name__ == '__main__':
     sites = ['https://www.baidu.com/']
 
-    run('172efc14296ae5f5be939af1', sites, 'nuclei-templates/http/miscellaneous/robots-txt-endpoint.yaml', '',
-        'info,low,medium,high', '')
+    run('172efc14296ae5f5be939af1', sites, 'robots-txt-endpoint.yaml', '', 'info,low,medium,high', '')
+    run('172efc14296ae5f5be939af1', sites, 'nuclei-templates/http/miscellaneous/robots-txt-endpoint.yaml', '', 'info,low,medium,high', '')

@@ -6,8 +6,9 @@ import thirdparty
 from pymongo import MongoClient
 from bson import ObjectId
 from flask import jsonify
+from common.redis_queue import add_nuclei_target, batch_add_data, add_zombie_target
 from config import Config
-from services.logger import logger
+from common.logger import logger
 
 
 class ConnMongo(object):
@@ -62,6 +63,7 @@ def get_project_data(page_size, page_index):
             nuclei_template_tags=project.get('nuclei_template_tags'),
             nuclei_proxy=project.get('nuclei_proxy'),
             nuclei_severity=project.get('nuclei_severity'),
+            account=project.get('account'),
             date=project.get('date')
         )
         for project in project_data
@@ -86,6 +88,7 @@ def get_zombie_project_data(page_size, page_index):
             service=project.get('service'),
             user_dict=project.get('user_dict'),
             pass_dict=project.get('pass_dict'),
+            account=project.get('account'),
             date=project.get('date')
         )
         for project in project_data
@@ -169,11 +172,21 @@ def get_nodes_data(draw, start, length):
         'data': [{
             'id': str(item['_id']),
             'node_name': item['node_name'],
+            'local_ip': item['local_ip'],
             'date': item['date']
         } for item in data]
     }
 
     return jsonify(result)
+
+
+def del_nodes():
+    """
+    清空所有节点
+    """
+    data = conn_db('nodes').delete_many({})
+    if data:
+        return data
 
 
 def download_nuclei_data(project_id='ALL'):
@@ -462,7 +475,7 @@ def download_file_leak_data(task_id='ALL', project_id=None):
     return filename
 
 
-def delete_project(project_id):
+def delete_nuclei_project(project_id):
     """
     指定 nuclei 项目删除
     """
@@ -471,7 +484,9 @@ def delete_project(project_id):
         if not project_data:
             logger.error(f'{project_id} nuclei 项目不存在')
             return False
+
         conn_db('project').delete_one({'_id': ObjectId(project_id)})
+        conn_db('nuclei_ret').delete_many({'project_id': project_id})
         logger.info(f'删除 {project_id} nuclei 项目成功')
         return True
     except Exception as e:
@@ -496,5 +511,133 @@ def delete_zombie_project(project_id):
         return False
 
 
-if __name__ == '__main__':
-    download_file_leak_data(task_id='6017edf36591e76d16171b65')
+def query_account(username):
+    """
+    查询用户信息
+    """
+    return conn_db('users').find_one({'username': username})
+
+
+def query_account_data(draw, start, length):
+    """
+    获取 users 所有数据
+    """
+    data = conn_db('users').find().skip(start).limit(length)
+    users_total = conn_db('users').count_documents({})
+
+    result = {
+        'draw': draw,
+        'recordsTotal': users_total,
+        'recordsFiltered': users_total,
+        'data': [{
+            'user_id': str(item['_id']),
+            'username': item['username'],
+            'password': item['password'],
+            'purview': item['purview'],
+            'email': item['email'],
+            'create_date': item['create_date']
+        } for item in data]
+    }
+
+    return jsonify(result)
+
+
+def add_user(username, password, purview, email):
+    """
+    添加用户
+    """
+    new_user = {
+        'username': username,
+        'password': password,
+        'purview': purview,
+        'create_date': thirdparty.curr_date(),
+        'email': email
+    }
+
+    conn_db('users').insert_one(new_user)
+
+
+def del_user(user_id):
+    """
+    删除指定用户
+    """
+    user_data = conn_db('users').find_one({'_id': ObjectId(user_id)})
+    if user_data['username'] != 'admin':
+        res = conn_db('users').delete_one({'_id': ObjectId(user_id)})
+        if res.deleted_count > 0:
+            return user_data['username']
+
+
+def create_nuclei_project(name, sites, description, nuclei_template_yaml, nuclei_template_tags, nuclei_severity, nuclei_proxy, account='admin', batch=0):
+    """
+    创建新项目
+    """
+    project_data = {
+        'project_name': name,
+        'project_description': description,
+        'nuclei_template_yaml': nuclei_template_yaml,
+        'nuclei_template_tags': nuclei_template_tags,
+        'nuclei_severity': nuclei_severity,
+        'nuclei_proxy': nuclei_proxy,
+        'account': account,
+        'date': thirdparty.curr_date()
+    }
+    project_id = conn_db('project').insert_one(project_data).inserted_id
+    logger.info(f'新建扫描项目 -> {name} -> {project_id}')
+    if batch == 0:
+        try:
+            add_nuclei_target(str(project_id), sites)
+        except Exception as e:
+            logger.error(f'新建项目失败 -> {name} -> Exception -> {e}')
+        return project_id
+    else:
+        try:
+            batch_add_data(str(project_id), sites)
+        except Exception as e:
+            logger.error(f'新建项目失败 -> {name} -> Exception -> {e}')
+        return project_id
+
+
+def create_zombie_project(name, target, description, service, user_dict, pwd_dict, account='admin', batch=0):
+    """
+    创建新服务爆破项目
+    """
+    project_data = {
+        'project_name': name,
+        'project_description': description,
+        'service': service,
+        'user_dict': user_dict,
+        'pwd_dict': pwd_dict,
+        'account': account,
+        'date': thirdparty.curr_date()
+    }
+    project_id = conn_db('zombie_project').insert_one(project_data).inserted_id
+    logger.info(f'新建 zombie 爆破服务项目 -> {name} -> {project_id}')
+    if batch == 0:
+        try:
+            add_zombie_target(str(project_id), target)
+        except Exception as e:
+            logger.error(f'新建项目失败 -> {name} -> Exception -> {e}')
+        return project_id
+    else:
+        try:
+            batch_add_data(str(project_id), target)
+        except Exception as e:
+            logger.error(f'新建项目失败 -> {name} -> Exception -> {e}')
+        return project_id
+
+
+def update_node_info(node_name):
+    """
+    更新 Agent 节点回连时间戳，方便查看节点状态
+    """
+    nodes_data = conn_db('nodes').find_one({'node_name': f'{node_name}'})
+    if nodes_data:
+        update_data = {'$set': {
+            'date': thirdparty.curr_date()  # 更新为当前日期时间
+        }}
+
+        conn_db('nodes').update_one({'node_name': node_name}, update_data)
+    else:
+        nodes = {'node_name': f'{node_name}', 'local_ip': thirdparty.get_local_ip(), 'date': thirdparty.curr_date()}
+        conn_db('nodes').insert_one(nodes)

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pentest TeamWork | Login</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/fontawesome-free/css/all.min.css') }}">
+    <!-- toastr -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='plugins/toastr/toastr.min.css') }}">
+    <!-- toastr -->
+    <script src="{{ url_for('static', filename='plugins/toastr/toastr.min.js') }}"></script>
+    <!-- icheck bootstrap -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/icheck-bootstrap/icheck-bootstrap.min.css') }}">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='dist/css/adminlte.min.css') }}">
+</head>
+
+<body class="hold-transition login-page">
+<div class="login-box">
+    <!-- /.login-logo -->
+    <div class="card">
+                <div class="card-header text-center">
+                    <h4>Nuclei Saas Platform Login</h4>
+                </div>
+        <div class="card-body">
+            <p class="login-box-msg"></p>
+            <form action="/Login" method="post">
+                <div class="input-group mb-3">
+                    <input type="username" class="form-control" placeholder="Username" name="username">
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-user"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group mb-3">
+                    <input type="password" class="form-control" placeholder="Password" name="password">
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-lock"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <!-- /.col -->
+                    <div class="col-4">
+                        <button type="submit" class="btn btn-block btn-default">Login</button>
+                    </div>
+                    <!-- /.col -->
+                </div>
+            </form>
+            <p class="mb-1">
+                <!-- <a href="javascript:alert('error.')">Forgot password</a> -->
+            </p>
+            <p class="mb-0">
+                <!-- <a href="/Register" class="text-center">Register</a> -->
+            </p>
+        </div>
+        <!-- /.card-body -->
+    </div>
+    <!-- /.card -->
+</div>
+<!-- /.login-box -->
+
+<!-- jQuery -->
+<script src="{{ url_for('static', filename='plugins/jquery/jquery.min.js') }}"></script>
+<!-- Bootstrap 4 -->
+<script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<!-- AdminLTE App -->
+<script src="{{ url_for('static', filename='dist/js/adminlte.min.js') }}"></script>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+<script>
+    $(function () {
+        $(document).Toasts('create', {
+            title: '提醒',
+            autohide: true,
+            delay: 7000,
+            body: '{{ message }}'
+        })
+    });
+</script>
+{% endfor %}
+{% endif %}
+{% endwith %}
+</body>
+
+</html>

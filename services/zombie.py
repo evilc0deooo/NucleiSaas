@@ -4,7 +4,7 @@ import os
 import json
 import time
 import thirdparty
-from services.logger import logger
+from common.logger import logger
 
 """
 一个轻量级的服务口令爆破工具, 继承了hydra的命令行设计, hashcat的字典生成, 以及红队向的功能设计.

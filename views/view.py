@@ -3,65 +3,85 @@
 import os
 import thirdparty
 import requests
-from flask import Flask, send_file, jsonify, after_this_request
-from flask import redirect, url_for, flash, request, render_template
-from nuclei_agent import target2list, create_project, get_queue, del_sites, del_all_sites
-from zombie_agent import create_project as create_zombie_project, get_zombie_queue, dict2list, del_all_targets, \
-    del_target
-from services.mongo import get_nuclei_data, get_zombie_data, download_nuclei_data, get_project_data, delete_project
-from services.mongo import conn_db, download_domain_data, download_site_data, download_file_leak_data
-from services.mongo import get_zombie_project_data, get_nodes_data, download_zombie_data, delete_zombie_project
-from flask_httpauth import HTTPBasicAuth
 from werkzeug.utils import secure_filename
+from flask import send_file, jsonify, after_this_request, redirect, url_for, flash, request, render_template, session
+from common.mongo import create_nuclei_project, get_project_data, get_nuclei_data, download_nuclei_data, delete_nuclei_project
+from common.mongo import create_zombie_project, get_zombie_project_data, get_zombie_data, download_zombie_data, delete_zombie_project
+from common.mongo import download_domain_data, download_site_data, download_file_leak_data
+from common.mongo import conn_db, query_account, query_account_data, add_user, del_user
+from common.mongo import get_nodes_data, del_nodes
+from common.redis_queue import get_nuclei_queue, get_zombie_queue, del_nuclei_sites, del_zombie_target, del_nuclei_all_sites, del_zombie_all_targets
+from views.__init__ import app, auth, login_check, check_password, allowed_file
+from views.__init__ import check_email, check_special_char, check_password_content, en_password
 from config import Config
 from loguru import logger
 
-app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(64)  # secret key 密钥
 
-app.config['ALLOWED_EXTENSIONS'] = {'txt', 'png', 'jpg', 'jpeg', 'gif'}
-
-auth = HTTPBasicAuth()
-"""
-添加 Basic Authentication 认证
-"""
-users = {
-    Config.AUTH_USERNAME: Config.AUTH_PASSWORD,
-}
-
-api_token = Config.API_TOKEN
-api_url = Config.API_URL
-
-
-def allowed_file(filename):
-    return '.' in filename and \
-        filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
-
-
-@auth.verify_password
-def verify_password(username, password):
+@app.route('/Login', methods=['GET', 'POST'])
+@auth.login_required
+def login():
     """
-    验证回调函数
+    登录逻辑
     """
-    if username in users and users[username] == password:
-        return username
+    if request.method == 'GET':
+        return render_template('login.html')
+
+    if request.method == 'POST':
+        account = request.form.get('username')
+        password = request.form.get('password')
+        try:
+            user_data = query_account(account)
+            if check_password(user_data['password'], password):
+                session['login'] = '1'
+                session['account'] = user_data['username']
+                session['email'] = user_data['email']
+                session['purview'] = user_data['purview']
+                # 配置资产搜集 API 及认证 Token
+                session['assets_api_url'] = Config.API_URL
+                session['assets_api_token'] = Config.API_TOKEN
+                flash('登录成功')
+                return redirect(url_for('project_view'))
+            else:
+                flash('用户名或密码错误')
+                return render_template('login.html')
+        except Exception as e:
+            print(e)
+            flash(f'登陆发生异常错误 {e}')
+            return render_template('login.html')
+
+
+@app.route('/Logout', methods=['GET'])
+@login_check
+def logout():
+    """
+    用户登出
+    """
+    session['login'] = ''
+    session['account'] = ''
+    session['user_email'] = ''
+    session['user_purview'] = ''
+    flash('登出成功')
+    return redirect(url_for('login'))
 
 
 @app.route('/', methods=['GET'])
+@app.route('/Dashboard', methods=['GET'])
 @app.route('/ProjectView/<int:page_index>', methods=['GET'])
 @app.route('/ProjectView', methods=['GET'])
 @auth.login_required
+@login_check
 def project_view(page_size=10, page_index=1):
     """
     项目视图
     """
     if request.method == 'GET':
         entries = get_project_data(page_size, page_index)
-        return render_template('project-view.html', page_size=page_size, page=page_index, entries=entries)
+        return render_template('project-view.html', page_size=page_size, page=page_index, entries=entries, session=session)
 
 
 @app.route('/NewTask', methods=['GET', 'POST'])
 @auth.login_required
+@login_check
 def new_nuclei_task():
     """
     添加任务
@@ -87,12 +107,7 @@ def new_nuclei_task():
 
         # 禁止目录穿越
         if not nuclei_template_yaml or './' in nuclei_template_yaml or '..' in nuclei_template_yaml:
-            flash('请输入指定要运行的模板或者模板目录（以逗号分隔或目录形式）')
-            return redirect(url_for('new_nuclei_task'))
-
-        poc_yaml_list = nuclei_template_yaml.split(',')
-        if thirdparty.exists_file(poc_yaml_list) != 'ALL_EXISTS':
-            flash('指定要运行的模板或者模板目录不存在')
+            flash('请输入指定要运行的YAML模板名称或者模板目录（以逗号分隔或目录形式）')
             return redirect(url_for('new_nuclei_task'))
 
         if not severity_critical and not severity_high and not severity_medium and not severity_low and not severity_info:
@@ -100,25 +115,22 @@ def new_nuclei_task():
             return redirect(url_for('new_nuclei_task'))
 
         # 使用列表推导式过滤掉空字符串
-        nuclei_severity_list = [s for s in
-                                [severity_critical, severity_high, severity_medium, severity_low, severity_info] if
-                                s.strip()]
+        nuclei_severity_list = [s for s in [severity_critical, severity_high, severity_medium, severity_low, severity_info] if s.strip()]
         # 将过滤后的字符串列表用逗号分隔拼接成一个字符串
         nuclei_severity = ','.join(nuclei_severity_list)
         if not sites:
             flash('请输入扫描目标')
             return redirect(url_for('new_nuclei_task'))
 
-        sites_list = target2list(sites)
-        create_project(project_name, sites_list, project_description, nuclei_template_yaml, nuclei_template_tags,
-                       nuclei_severity, nuclei_proxy,
-                       batch=0)
+        sites_list = thirdparty.target2list(sites)
+        create_nuclei_project(project_name, sites_list, project_description, nuclei_template_yaml, nuclei_template_tags, nuclei_severity, nuclei_proxy, account=session['account'], batch=0)
         flash('成功创建项目')
         return redirect(url_for('project_view'))
 
 
 @app.route('/BatchTask', methods=['GET', 'POST'])
 @auth.login_required
+@login_check
 def batch_nuclei_task():
     if request.method == 'GET':
         return render_template('new-batch-task.html')
@@ -140,12 +152,7 @@ def batch_nuclei_task():
             return redirect(url_for('batch_nuclei_task'))
 
         if not nuclei_template_yaml or './' in nuclei_template_yaml or '..' in nuclei_template_yaml:
-            flash('请输入指定要运行的模板或者模板目录（以逗号分隔或目录形式）')
-            return redirect(url_for('batch_nuclei_task'))
-
-        poc_yaml_list = nuclei_template_yaml.split(',')
-        if thirdparty.exists_file(poc_yaml_list) != 'ALL_EXISTS':
-            flash('指定要运行的模板或者模板目录不存在')
+            flash('请输入指定要运行的YAML模板名称或者模板目录（以逗号分隔或目录形式）')
             return redirect(url_for('batch_nuclei_task'))
 
         if not severity_critical and not severity_high and not severity_medium and not severity_low and not severity_info:
@@ -153,38 +160,35 @@ def batch_nuclei_task():
             return redirect(url_for('batch_nuclei_task'))
 
         # 使用列表推导式过滤掉空字符串
-        nuclei_severity_list = [s for s in
-                                [severity_critical, severity_high, severity_medium, severity_low, severity_info] if
-                                s.strip()]
+        nuclei_severity_list = [s for s in [severity_critical, severity_high, severity_medium, severity_low, severity_info] if s.strip()]
         # 将过滤后的字符串列表用逗号分隔拼接成一个字符串
         nuclei_severity = ','.join(nuclei_severity_list)
 
         if 'file' not in request.files:
-            flash('请上传目标文件（仅支持 .txt 文件）')
+            flash('请上传目标文件（仅支持 txt 文件）')
             return redirect(url_for('batch_nuclei_task'))
 
         file = request.files['file']
         if file.filename == '':
-            flash('请上传目标文件（仅支持 .txt 文件）')
+            flash('请上传目标文件（仅支持 txt 文件）')
             return redirect(url_for('batch_nuclei_task'))
 
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             new_filename = f'{thirdparty.TMP_PATH}/{thirdparty.random_choices()}_{filename}'
             file.save(new_filename)
-            create_project(project_name, new_filename, project_description, nuclei_template_yaml, nuclei_template_tags,
-                           nuclei_severity, nuclei_proxy,
-                           batch=1)
-            flash('成功创建项目.')
+            create_nuclei_project(project_name, new_filename, project_description, nuclei_template_yaml, nuclei_template_tags, nuclei_severity, nuclei_proxy, account=session['account'], batch=1)
+            flash('成功创建项目')
             return redirect(url_for('project_view'))
 
         else:
-            flash('请上传目标文件（仅支持 .txt 文件）')
+            flash('请上传目标文件（仅支持 txt 文件）')
             return redirect(url_for('batch_nuclei_task'))
 
 
 @app.route('/VulRet/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def nuclei_ret(project_id):
     """
     查看扫描结果
@@ -195,6 +199,7 @@ def nuclei_ret(project_id):
 
 @app.route('/Ajax/VulRet/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_vul_data(project_id):
     """
     漏洞扫描结果 Ajax 接口
@@ -205,8 +210,23 @@ def get_vul_data(project_id):
     return get_nuclei_data(draw, start, length, project_id)
 
 
+@app.route('/', methods=['GET'])
+@app.route('/ZombieProjectView/<int:page_index>', methods=['GET'])
+@app.route('/ZombieProjectView', methods=['GET'])
+@auth.login_required
+@login_check
+def zombie_project_view(page_size=10, page_index=1):
+    """
+    弱口令服务项目视图
+    """
+    if request.method == 'GET':
+        entries = get_zombie_project_data(page_size, page_index)
+        return render_template('zombie-project-view.html', page_size=page_size, page=page_index, entries=entries)
+
+
 @app.route('/NewZombieTask', methods=['GET', 'POST'])
 @auth.login_required
+@login_check
 def new_zombie_task():
     """
     添加服务爆破任务
@@ -229,18 +249,18 @@ def new_zombie_task():
             flash('请输入扫描目标')
             return redirect(url_for('new_zombie_task'))
 
-        ips_list = target2list(ips_list)
-        user_dict = dict2list(user_dict)
-        pass_dict = dict2list(pass_dict)
+        ips_list = thirdparty.target2list(ips_list)
+        user_dict = thirdparty.dict2list(user_dict)
+        pass_dict = thirdparty.dict2list(pass_dict)
 
         create_zombie_project(project_name, ips_list, project_description, service_name, user_dict, pass_dict, batch=0)
         flash('成功创建项目')
         return redirect(url_for('zombie_project_view'))
-        # return render_template('new-zombie-task.html')
 
 
 @app.route('/BatchZombieTask', methods=['GET', 'POST'])
 @auth.login_required
+@login_check
 def batch_zombie_task():
     if request.method == 'GET':
         return render_template('new-zombie-batch-task.html')
@@ -260,12 +280,12 @@ def batch_zombie_task():
             return redirect(url_for('batch_zombie_task'))
 
         if 'file' not in request.files:
-            flash('请上传IP目标文件（仅支持 .txt 文件）')
+            flash('请上传IP目标文件（仅支持 txt 文件）')
             return redirect(url_for('batch_zombie_task'))
 
         file = request.files['file']
         if file.filename == '':
-            flash('请上传IP目标文件（仅支持 .txt 文件）')
+            flash('请上传IP目标文件（仅支持 txt 文件）')
             return redirect(url_for('batch_zombie_task'))
 
         if file and allowed_file(file.filename):
@@ -273,31 +293,32 @@ def batch_zombie_task():
             new_filename = f'{thirdparty.TMP_PATH}/{thirdparty.random_choices()}_{filename}'
             file.save(new_filename)
 
-            user_dict = dict2list(user_dict)
-            pass_dict = dict2list(pass_dict)
+            user_dict = thirdparty.dict2list(user_dict)
+            pass_dict = thirdparty.dict2list(pass_dict)
 
-            create_zombie_project(project_name, new_filename, project_description, service_name, user_dict, pass_dict,
-                                  batch=1)
-            flash('成功创建项目.')
+            create_zombie_project(project_name, new_filename, project_description, service_name, user_dict, pass_dict, batch=1)
+            flash('成功创建项目')
             return redirect(url_for('zombie_project_view'))
 
         else:
-            flash('请上传IP目标文件（仅支持 .txt 文件）')
+            flash('请上传IP目标文件（仅支持 txt 文件）')
             return redirect(url_for('batch_zombie_task'))
 
 
 @app.route('/ZombieRet/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def zombie_ret(project_id):
     """
     查看 zombie 扫描结果
     """
     if request.method == 'GET':
-        return render_template('zombie-ret.html', project_id=project_id)
+        return render_template('zombie-ret.html', project_id=project_id, session=session)
 
 
 @app.route('/Ajax/ZombieRet/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_zombie_ret(project_id):
     """
     弱口令服务扫描结果 Ajax 接口
@@ -308,32 +329,40 @@ def get_zombie_ret(project_id):
     return get_zombie_data(draw, start, length, project_id)
 
 
-@app.route('/', methods=['GET'])
-@app.route('/ZombieProjectView/<int:page_index>', methods=['GET'])
-@app.route('/ZombieProjectView', methods=['GET'])
-@auth.login_required
-def zombie_project_view(page_size=10, page_index=1):
-    """
-    弱口令服务项目视图
-    """
-    if request.method == 'GET':
-        entries = get_zombie_project_data(page_size, page_index)
-        return render_template('zombie-project-view.html', page_size=page_size, page=page_index, entries=entries)
-
-
 @app.route('/CheckNodes', methods=['GET'])
 @auth.login_required
+@login_check
 def check_nodes():
     """
     查看 Agent 节点状态
     """
     if request.method == 'GET':
-        return render_template('nodes.html')
+        return render_template('nodes-status.html')
+
+
+@app.route('/ClearNodes', methods=['GET'])
+@auth.login_required
+@login_check
+def clear_nodes():
+    """
+    清空节点缓存
+    """
+    if request.method == 'GET':
+        try:
+            nodes_data = del_nodes()
+            if nodes_data:
+                flash('成功删除所有 Agent 节点缓存, 请耐心等待回连')
+            else:
+                flash(f'删除 Agent 节点缓存失败')
+        except Exception as e:
+            flash(f'删除 Agent 节点缓存异常 {e}')
+        return redirect(url_for('project_view'))
 
 
 @app.route('/Ajax/CheckNodes', methods=['GET'])
 @auth.login_required
-def check_nodes_data():
+@login_check
+def check_nodes_status():
     """
     检查节点状态接口
     """
@@ -345,18 +374,20 @@ def check_nodes_data():
 
 @app.route('/CheckQueue/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def query_queue(project_id):
     """
     查询 nuclei 指定队列数量
     """
     if request.method == 'GET':
-        count = get_queue(project_id)
+        count = get_nuclei_queue(project_id)
         flash(f'{project_id} 队列待扫描目标：{count}')
         return render_template('nuclei-ret.html', project_id=project_id)
 
 
 @app.route('/CheckZombieQueue/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def query_zombie_queue(project_id):
     """
     查询 zombie 指定队列数量
@@ -369,6 +400,7 @@ def query_zombie_queue(project_id):
 
 @app.route('/Download/VulRet/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def download_vul_file(project_id):
     """
     下载 Nuclei 扫描结果
@@ -389,12 +421,13 @@ def download_vul_file(project_id):
 
         return send_file(file_path, as_attachment=True)
     else:
-        flash('导出 Nuclei 扫描结果 error')
+        flash('导出 Nuclei 扫描结果失败')
         return render_template('nuclei-ret.html', project_id=project_id)
 
 
 @app.route('/Download/ZombieRet/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def download_zombie_file(project_id):
     """
     下载 zombie 扫描结果
@@ -415,12 +448,13 @@ def download_zombie_file(project_id):
 
         return send_file(file_path, as_attachment=True)
     else:
-        flash('导出 zombie 扫描结果 error')
+        flash('导出 zombie 扫描结果失败')
         return render_template('zombie-ret.html', project_id=project_id)
 
 
 @app.route('/Download/Domain/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def download_domain_file(task_id):
     """
     下载域名信息
@@ -440,12 +474,13 @@ def download_domain_file(task_id):
 
         return send_file(file_path, as_attachment=True)
     else:
-        flash(f'导出域名信息 error')
+        flash(f'导出域名信息失败')
         return redirect(url_for('get_domain'))
 
 
 @app.route('/Download/Project/Domain/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def download_project_domain_file(project_id):
     """
     下载指定项目下所有任务的域名信息
@@ -465,12 +500,13 @@ def download_project_domain_file(project_id):
 
         return send_file(file_path, as_attachment=True)
     else:
-        flash(f'导出域名信息 error')
+        flash(f'导出域名信息失败')
         return redirect(url_for('get_assets_project'))
 
 
 @app.route('/Download/Site/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def download_site_file(task_id):
     """
     下载站点集合
@@ -490,12 +526,13 @@ def download_site_file(task_id):
 
         return send_file(file_path, as_attachment=True)
     else:
-        flash(f'导出站点信息 error')
+        flash(f'导出站点信息失败')
         return redirect(url_for('get_sites'))
 
 
 @app.route('/Download/Project/Site/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def download_project_site_file(project_id):
     """
     下载指定项目下所有任务的站点集合
@@ -515,12 +552,13 @@ def download_project_site_file(project_id):
 
         return send_file(file_path, as_attachment=True)
     else:
-        flash(f'导出站点信息 error')
+        flash(f'导出站点信息失败')
         return redirect(url_for('get_assets_project'))
 
 
 @app.route('/Download/FileLeak/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def download_file_leak_assets(task_id):
     """
     下载文件泄露资产
@@ -540,12 +578,13 @@ def download_file_leak_assets(task_id):
 
         return send_file(file_path, as_attachment=True)
     else:
-        flash(f'导出文件泄露信息 error')
+        flash(f'导出文件泄露信息失败')
         return redirect(url_for('get_file_leak'))
 
 
 @app.route('/Download/Project/FileLeak/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def download_project_file_leak_assets(project_id):
     """
     下载指定项目下所有任务的文件泄露资产
@@ -565,21 +604,22 @@ def download_project_file_leak_assets(project_id):
 
         return send_file(file_path, as_attachment=True)
     else:
-        flash(f'导出文件泄露信息 error')
+        flash(f'导出文件泄露信息失败')
         return redirect(url_for('get_assets_project'))
 
 
 @app.route('/DelProject/<project_id>', methods=['GET'])
 @auth.login_required
-def del_project(project_id):
+@login_check
+def del_nuclei_project(project_id):
     """
-    删除项目
+    删除 nuclei 项目
     """
     if request.method == 'GET':
-        del_s = delete_project(project_id)
+        del_s = delete_nuclei_project(project_id)
         if del_s:
             flash(f'{project_id} Nuclei 项目已删除')
-            del_sts = del_sites(project_id)
+            del_sts = del_nuclei_sites(project_id)
             if del_sts:
                 flash(f'{project_id} Nuclei 扫描队列已删除')
             else:
@@ -590,8 +630,26 @@ def del_project(project_id):
         return redirect(url_for('project_view'))
 
 
+@app.route('/DelQueue/<project_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def del_nuclei_queue(project_id):
+    """
+    删除指定 nuclei 项目队列
+    """
+    if request.method == 'GET':
+        del_sts = del_nuclei_sites(project_id)
+        if del_sts:
+            flash(f'{project_id} Nuclei 扫描队列已删除')
+        else:
+            flash(f'{project_id} Nuclei 扫描队列删除失败')
+
+        return redirect(url_for('project_view'))
+
+
 @app.route('/DelZombieProject/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def del_zombie_project(project_id):
     """
     删除 zombie 项目
@@ -600,7 +658,7 @@ def del_zombie_project(project_id):
         del_s = delete_zombie_project(project_id)
         if del_s:
             flash(f'{project_id} Zombie 项目已删除')
-            del_sts = del_target(project_id)
+            del_sts = del_zombie_target(project_id)
             if del_sts:
                 flash(f'{project_id} Zombie 扫描队列已删除')
             else:
@@ -611,15 +669,33 @@ def del_zombie_project(project_id):
         return redirect(url_for('zombie_project_view'))
 
 
+@app.route('/DelZombieQueue/<project_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def del_zombie_queue(project_id):
+    """
+    删除指定 zombie 项目队列
+    """
+    if request.method == 'GET':
+        del_sts = del_zombie_target(project_id)
+        if del_sts:
+            flash(f'{project_id} Zombie 扫描队列已删除')
+        else:
+            flash(f'{project_id} Zombie 扫描队列删除失败')
+
+        return redirect(url_for('zombie_project_view'))
+
+
 @app.route('/ClearSites', methods=['GET'])
 @auth.login_required
+@login_check
 def clear_sites():
     """
     删除所有 nuclei 待扫描队列
     """
     if request.method == 'GET':
         try:
-            count = del_all_sites()
+            count = del_nuclei_all_sites()
             if count == 0:
                 flash('已删除 Nuclei 所有待扫描队列')
             else:
@@ -631,13 +707,14 @@ def clear_sites():
 
 @app.route('/ClearIPs', methods=['GET'])
 @auth.login_required
+@login_check
 def clear_ips():
     """
     删除所有 zombie 待扫描队列
     """
     if request.method == 'GET':
         try:
-            count = del_all_targets()
+            count = del_zombie_all_targets()
             if count == 0:
                 flash('已删除 Zombie 所有待扫描队列')
             else:
@@ -649,6 +726,7 @@ def clear_ips():
 
 @app.route('/NewDomainTask', methods=['GET', 'POST'])
 @auth.login_required
+@login_check
 def api_newtask():
     """
     添加资产扫描任务
@@ -706,8 +784,8 @@ def api_newtask():
             'only_file_leak': only_file_leak,
         }
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.post(api_url + '/api/task', json=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.post(session['assets_api_url'] + '/api/task', json=params, headers=headers)
         data = req.json()
         message = data['message']
         if req.status_code == 200 and data['code'] == 300:
@@ -721,6 +799,7 @@ def api_newtask():
 
 @app.route('/AssetsProject', methods=['GET', 'POST'])
 @auth.login_required
+@login_check
 def get_assets_project():
     """
     域名资产 -> 项目视图
@@ -731,6 +810,7 @@ def get_assets_project():
 
 @app.route('/Ajax/ProjectView', methods=['GET'])
 @auth.login_required
+@login_check
 def ajax_project_view():
     """
     项目数据 Ajax 接口
@@ -757,8 +837,8 @@ def ajax_project_view():
             del params['project_id']
 
         # 发起外部 API 请求
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.get(api_url + '/api/project', params=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.get(session['assets_api_url'] + '/api/project', params=params, headers=headers)
 
         # 解析外部 API 返回的数据
         data = req.json()
@@ -784,6 +864,7 @@ def ajax_project_view():
 
 @app.route('/DelAssetsProject/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def delete_assets_project(project_id, option=True):
     """
     删除项目（会删除所有项目下所有任务数据）
@@ -794,8 +875,8 @@ def delete_assets_project(project_id, option=True):
             'project_id': [project_id]
         }
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.post(api_url + '/api/project/delete', json=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.post(session['assets_api_url'] + '/api/project/delete', json=params, headers=headers)
         data = req.json()
         message = data['message']
         if req.status_code == 200 and data['code'] == 300:
@@ -811,9 +892,10 @@ def delete_assets_project(project_id, option=True):
 @app.route('/TaskManage', methods=['GET'])
 @app.route('/TaskManage/<project_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_task(project_id=None):
     """
-    域名资产 -> 任务管理
+    资产收集 -> 任务管理
     """
     if request.method == 'GET':
         return render_template('api-task.html', project_id=project_id)
@@ -821,6 +903,7 @@ def get_task(project_id=None):
 
 @app.route('/Ajax/GetTask', methods=['GET'])
 @auth.login_required
+@login_check
 def ajax_get_task():
     """
     获取任务数据 Ajax 接口
@@ -844,8 +927,8 @@ def ajax_get_task():
             'order': 'task_status',
         }
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.get(api_url + '/api/task', params=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.get(session['assets_api_url'] + '/api/task', params=params, headers=headers)
         data = req.json()
         items = data.get('items', [])
         total = data.get('total', 0)
@@ -876,6 +959,7 @@ def ajax_get_task():
 
 @app.route('/StopTask/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def stop_task(task_id):
     """
     停止任务接口
@@ -887,8 +971,8 @@ def stop_task(task_id):
             ]
         }
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.post(api_url + '/api/task/batch_stop', json=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.post(session['assets_api_url'] + '/api/task/batch_stop', json=params, headers=headers)
         data = req.json()
         message = data['message']
         if req.status_code == 200 and data['code'] == 300:
@@ -902,6 +986,7 @@ def stop_task(task_id):
 
 @app.route('/DelTask/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def del_task(task_id):
     """
     删除任务接口
@@ -914,8 +999,8 @@ def del_task(task_id):
             ]
         }
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.post(api_url + '/api/task/delete', json=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.post(session['assets_api_url'] + '/api/task/delete', json=params, headers=headers)
         data = req.json()
         message = data['message']
         if req.status_code == 200 and data['code'] == 300:
@@ -929,6 +1014,7 @@ def del_task(task_id):
 
 @app.route('/DelTask/ErrorStatus', methods=['GET'])
 @auth.login_required
+@login_check
 def del_error_task():
     """
     删除所有失败任务接口
@@ -946,8 +1032,8 @@ def del_error_task():
             'task_id': _task_id_list
         }
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.post(api_url + '/api/task/delete', json=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.post(session['assets_api_url'] + '/api/task/delete', json=params, headers=headers)
         data = req.json()
         message = data['message']
         if req.status_code == 200 and data['code'] == 300:
@@ -962,9 +1048,10 @@ def del_error_task():
 @app.route('/Sites', methods=['GET'])
 @app.route('/Sites/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_sites(task_id=None):
     """
-    域名资产 -> 站点资产
+    资产收集 -> 站点资产
     """
     if request.method == 'GET':
         return render_template('api-sites.html', task_id=task_id)
@@ -972,6 +1059,7 @@ def get_sites(task_id=None):
 
 @app.route('/Ajax/GetSites', methods=['GET'])
 @auth.login_required
+@login_check
 def ajax_get_sites():
     """
     站点数据 Ajax 请求
@@ -1032,8 +1120,8 @@ def ajax_get_sites():
         if not site_tag:
             del params['tag']
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.get(api_url + '/api/site', params=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.get(session['assets_api_url'] + '/api/site', params=params, headers=headers)
         data = req.json()
         items = data.get('items', [])
         total = data.get('total', 0)
@@ -1065,6 +1153,7 @@ def ajax_get_sites():
 @app.route('/Domain', methods=['GET'])
 @app.route('/Domain/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_domain(task_id=None):
     if request.method == 'GET':
         return render_template('api-domain.html', task_id=task_id)
@@ -1072,6 +1161,7 @@ def get_domain(task_id=None):
 
 @app.route('/Ajax/GetDomains', methods=['GET'])
 @auth.login_required
+@login_check
 def ajax_get_domains():
     """
     域名数据 Ajax 请求
@@ -1117,8 +1207,8 @@ def ajax_get_domains():
         if not source:
             del params['source']
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.get(api_url + '/api/domain', params=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.get(session['assets_api_url'] + '/api/domain', params=params, headers=headers)
         data = req.json()
         items = data.get('items', [])
         total = data.get('total', 0)
@@ -1143,6 +1233,7 @@ def ajax_get_domains():
 @app.route('/IPs', methods=['GET'])
 @app.route('/IPs/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_ips(task_id=None):
     if request.method == 'GET':
         return render_template('api-ips.html', task_id=task_id)
@@ -1150,6 +1241,7 @@ def get_ips(task_id=None):
 
 @app.route('/Ajax/GetIPs', methods=['GET'])
 @auth.login_required
+@login_check
 def ajax_get_ips():
     """
     IP 信息 Ajax 请求
@@ -1225,8 +1317,8 @@ def ajax_get_ips():
         if not asn_organization:
             del params['geo_asn.organization']
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.get(api_url + '/api/ip', params=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.get(session['assets_api_url'] + '/api/ip', params=params, headers=headers)
         data = req.json()
         items = data.get('items', [])
         total = data.get('total', 0)
@@ -1254,6 +1346,7 @@ def ajax_get_ips():
 @app.route('/Service', methods=['GET'])
 @app.route('/Service/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_service(task_id=None):
     if request.method == 'GET':
         return render_template('api-service.html', task_id=task_id)
@@ -1261,6 +1354,7 @@ def get_service(task_id=None):
 
 @app.route('/Ajax/GetService', methods=['GET'])
 @auth.login_required
+@login_check
 def ajax_get_service():
     """
     服务信息 Ajax 请求
@@ -1306,8 +1400,8 @@ def ajax_get_service():
         if not service_product:
             del params['service_info.product']
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.get(api_url + '/api/service', params=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.get(session['assets_api_url'] + '/api/service', params=params, headers=headers)
         data = req.json()
         items = data.get('items', [])
         total = data.get('total', 0)
@@ -1329,6 +1423,7 @@ def ajax_get_service():
 @app.route('/Cert', methods=['GET'])
 @app.route('/Cert/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_cert(task_id=None):
     if request.method == 'GET':
         return render_template('api-cert.html', task_id=task_id)
@@ -1336,6 +1431,7 @@ def get_cert(task_id=None):
 
 @app.route('/Ajax/GetCert', methods=['GET'])
 @auth.login_required
+@login_check
 def ajax_get_cert():
     """
     SSL 证书 Ajax 请求
@@ -1408,8 +1504,8 @@ def ajax_get_cert():
         if not alt_name:
             del params['cert.extensions.subjectAltName']
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.get(api_url + '/api/cert', params=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.get(session['assets_api_url'] + '/api/cert', params=params, headers=headers)
         data = req.json()
         items = data.get('items', [])
         total = data.get('total', 0)
@@ -1432,6 +1528,7 @@ def ajax_get_cert():
 @app.route('/FileLeak', methods=['GET'])
 @app.route('/FileLeak/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_file_leak(task_id=None):
     if request.method == 'GET':
         return render_template('api-file-leak.html', task_id=task_id)
@@ -1439,6 +1536,7 @@ def get_file_leak(task_id=None):
 
 @app.route('/Ajax/GetFileLeak', methods=['GET'])
 @auth.login_required
+@login_check
 def ajax_get_file_leak():
     """
     目录文件泄露 Ajax 请求
@@ -1484,8 +1582,8 @@ def ajax_get_file_leak():
         if not title:
             del params['title']
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.get(api_url + '/api/file_leak', params=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.get(session['assets_api_url'] + '/api/file_leak', params=params, headers=headers)
         data = req.json()
         items = data.get('items', [])
         total = data.get('total', 0)
@@ -1510,6 +1608,7 @@ def ajax_get_file_leak():
 @app.route('/CIDR', methods=['GET'])
 @app.route('/CIDR/<task_id>', methods=['GET'])
 @auth.login_required
+@login_check
 def get_cidr(task_id=None):
     if request.method == 'GET':
         return render_template('api-cidr.html', task_id=task_id)
@@ -1517,6 +1616,7 @@ def get_cidr(task_id=None):
 
 @app.route('/Ajax/GetCIDR', methods=['GET'])
 @auth.login_required
+@login_check
 def ajax_get_cidr():
     """
     C 段统计数据 Ajax 请求
@@ -1552,8 +1652,8 @@ def ajax_get_cidr():
         if not domain_count:
             del params['domain_count']
 
-        headers = {'token': api_token, 'accept': 'application/json'}
-        req = requests.get(api_url + '/api/cip', params=params, headers=headers)
+        headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
+        req = requests.get(session['assets_api_url'] + '/api/cip', params=params, headers=headers)
         data = req.json()
         items = data.get('items', [])
         total = data.get('total', 0)
@@ -1573,6 +1673,114 @@ def ajax_get_cidr():
         }
 
         return jsonify(result)
+
+
+@app.route('/Users', methods=['GET'])
+@auth.login_required
+@login_check
+def users_view():
+    """
+    用户管理视图
+    """
+    if '1' not in session['purview']:
+        flash('权限不足, 请联系超级管理员操作')
+        return redirect(url_for('project_view'))
+
+    if request.method == 'GET':
+        return render_template('member.html')
+
+
+@app.route('/Ajax/GetUsers', methods=['GET'])
+@auth.login_required
+@login_check
+def get_users_data():
+    """
+    Ajax 请求获取用户数据
+    """
+    if '1' not in session['purview']:
+        flash('权限不足, 请联系超级管理员操作')
+        return redirect(url_for('project_view'))
+
+    if request.method == 'GET':
+        draw = int(request.args.get('draw', 0))
+        start = int(request.args.get('start', 0))
+        length = int(request.args.get('length', 10))
+        return query_account_data(draw, start, length)
+
+
+@app.route('/DelUser/<user_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def del_user_data(user_id):
+    """
+    删除指定用户
+    """
+    if '1' not in session['purview']:
+        flash('权限不足, 请联系超级管理员操作')
+        return redirect(url_for('project_view'))
+
+    if request.method == 'GET':
+        username = del_user(user_id)
+        if username:
+            flash(f'{username} 用户删除成功')
+            return redirect(url_for('users_view'))
+        else:
+            flash(f'初始化管理员用户禁止删除')
+            return redirect(url_for('users_view'))
+
+
+@app.route('/Register', methods=['GET', 'POST'])
+@auth.login_required
+@login_check
+def register():
+    """
+    注册用户
+    """
+    if '1' not in session['purview']:
+        flash('权限不足, 请联系超级管理员操作')
+        return redirect(url_for('project_view'))
+
+    if request.method == 'GET':
+        return render_template('register.html')
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        user_email = request.form.get('email')
+        password = request.form.get('password')
+        rpassword = request.form.get('rpassword')
+        purview = ['2']  # 默认注册权限为普通用户
+
+        if not check_email(user_email):
+            flash('邮箱地址不正确.')
+            return render_template('login.html')
+
+        if not check_special_char(username):
+            flash('用户名不能包含特殊字符，长度范围应遵循5到15.')
+            return render_template('login.html')
+
+        if not check_password_content(password):
+            flash('检查密码是否为数字和大小写字母的组合，长度范围应遵循8-15.')
+            return render_template('login.html')
+
+        # 判断是否已经存在该用户或邮箱.
+        user = query_account(username)
+        if user:
+            flash('注册的邮箱或用户名已存在')
+            return render_template('login.html')
+        else:
+            if password == rpassword:
+                password = en_password(password)
+                try:
+                    add_user(username, password, purview, user_email)
+                    flash('成功注册用户')
+                    return redirect(url_for('users_view'))
+
+                except Exception as e:
+                    flash(f'用户注册异常 {e}')
+                    return render_template('login.html')
+            else:
+                flash('两次密码输入不一致.')
+                return render_template('login.html')
 
 
 @app.errorhandler(500)

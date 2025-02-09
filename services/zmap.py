@@ -3,7 +3,7 @@
 import os
 import csv
 import thirdparty
-from services.logger import logger
+from common.logger import logger
 
 """
 cd /root/
