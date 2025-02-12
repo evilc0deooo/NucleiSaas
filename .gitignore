@@ -160,3 +160,4 @@ cython_debug/
 .DS_Store
 /.idea
 views/.DS_Store
+/thirdparty/getjsurlscan
