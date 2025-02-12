@@ -7,11 +7,11 @@
         <div class="container">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0"><small> Nuclei 漏洞 </small></h1>
+                    <h1 class="m-0"><small> API 敏感信息安全检测 </small></h1>
                 </div><!-- /.col -->
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item active">Vul View</li>
+                        <li class="breadcrumb-item active">API Sensitive Information Detection</li>
                     </ol>
                 </div><!-- /.col -->
             </div><!-- /.row -->
@@ -24,28 +24,26 @@
             <!-- card -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Nuclei Ret</h3>
+                    <h3 class="card-title">ChkAPI Hae Ret</h3>
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body">
-                    <a href="/CheckQueue/{{ project_id }}" class="btn btn-default">检查队列</a>
-                    <a href="/Download/VulRet/{{ project_id }}" class="btn btn-default">导出结果</a>
+                    <a href="/CheckChkAPIQueue/{{ project_id }}" class="btn btn-default">检查队列</a>
+                    <a href="/Download/ChkAPIRet/{{ project_id }}" class="btn btn-default">导出结果</a>
                     {% if project_id != 'ALL' %}
-                    <a href="/DelQueue/{{ project_id }}" class="btn btn-primary">清空队列（仅该项目）</a>
-                    <a href="/DelProject/{{ project_id }}" class="btn btn-secondary">删除项目（会清空数据）</a>
+                    <a href="/DelChkAPIQueue/{{ project_id }}" class="btn btn-primary">清空队列（仅该项目）</a>
+                    <a href="/DelChkAPIProject/{{ project_id }}" class="btn btn-danger">删除项目（会清空数据）</a>
                     {% endif %}
                     {% if project_id == 'ALL' %}
-                    <a href="/ClearNucleiSites" class="btn btn-primary">清空队列（所有项目）</a>
+                    <a href="/ClearChkAPISites" class="btn btn-primary">清空队列（所有项目）</a>
                     {% endif %}
                     <br><br>
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center;">
                         <tr>
-                            <th data-name="target">目标</th>
-                            <th data-name="vuln_name">漏洞名称</th>
-                            <th data-name="vuln_severity">安全等级</th>
-                            <th data-name="template_id">模版ID</th>
-                            <th data-name="vuln_url">漏洞地址</th>
+                            <th data-name="site">目标站点</th>
+                            <th data-name="name">检测名称</th>
+                            <th data-name="matches">匹配内容</th>
                             <th data-name="date">时间</th>
                         </tr>
                         </thead>
@@ -74,39 +72,29 @@
             lengthChange: true,
             autoWidth: false,
             ajax: {
-                url: '/Ajax/VulRet/{{ project_id }}',
+                url: '/Ajax/ChkAPIRet/{{ project_id }}',
                 type: 'GET',
                 dataSrc: function (json) {
                     return json.data.map(function (row) {
-                        if (!row.template_url) {
-                            row.template_url = '-';
-                        }
-                        if (!row.template_id) {
-                            row.template_id = '-';
-                        }
-                        if (!row.vuln_name) {
-                            row.vuln_name = '-';
-                        }
-                        if (!row.vuln_severity) {
-                            row.vuln_severity = '-';
-                        }
-                        if (!row.vuln_url) {
-                            row.vuln_url = '-';
-                        }
-                        if (!row.curl_command) {
-                            row.curl_command = '-';
-                        }
-                        if (!row.target) {
-                            row.target = '-';
-                        }
+                        console.log(row)
                         return row;
                     });
                 }
             },
             columns: [
-                // {data: 'target'},
+                // {data: 'site'},
                 {
-                    data: 'target',
+                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
+                    data: null,
+                    render: function (data, type, row) {
+                        let html = '';
+                        html += '<a href="' + row.url + '" class="badge badge-dark">' + row.site + '</a>'
+                        return html
+                    }
+                },
+                // {data: 'name'},
+                {
+                    data: 'name',
                     render: function (data) {
                         let html = '';
                         if (data && data.length > 0) {
@@ -115,49 +103,9 @@
                         }
                     }
                 },
-                // {data: 'vuln_name'},
+                // {data: 'matches'},
                 {
-                    data: 'vuln_name',
-                    render: function (data) {
-                        let html = '';
-                        if (data && data.length > 0) {
-                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
-                            return html;
-                        }
-                    }
-                },
-                // {data: 'vuln_severity'},
-                {
-                    data: 'vuln_severity',
-                    render: function (data) {
-                        let html = '';
-                        if (data === 'critical') {
-                            html += '<p><span class="badge badge-danger">' + data + '</span></p>';
-                        } else if (data === 'high') {
-                            html += '<p><span class="badge badge-danger">' + data + '</span></p>';
-                        } else if (data === 'medium') {
-                            html += '<p><span class="badge badge-warning">' + data + '</span></p>';
-                        } else if (data === 'info') {
-                            html += '<p><span class="badge badge-success">' + data + '</span></p>'
-                        } else {
-                            html += '<p><span class="badge badge-secondary">' + data + '</span></p>';
-                        }
-                        return html;
-                    }
-                },
-                // {data: 'template_id'},
-                {
-                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
-                    data: null,
-                    render: function (data, type, row) {
-                        let html = '';
-                        html += '<a href="' + row.template_url + '" class="badge badge-light">' + row.template_id + '</a>'
-                        return html
-                    }
-                },
-                // {data: 'vuln_url'},
-                {
-                    data: 'vuln_url',
+                    data: 'matches',
                     render: function (data) {
                         let html = '';
                         if (data && data.length > 0) {
@@ -176,7 +124,7 @@
                             return html;
                         }
                     }
-                },
+                }
             ],
             "language": //把文字变为中文
                 {

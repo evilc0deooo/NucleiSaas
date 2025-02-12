@@ -32,31 +32,19 @@
                         {% include 'api-nav-link.html' %}
                         <form id="searchForm">
                             <div class="form-group">搜索</div>
-                            <label><input type="search" id="ip" class="form-control form-control"
-                                          placeholder="IP"></label>
-                            <label><input type="search" id="port" class="form-control form-control"
-                                          placeholder="端口号"></label>
-                            <label><input type="search" id="subject_dn" class="form-control form-control"
-                                          placeholder="主题名称"></label>
-                            <label><input type="search" id="issuer_dn" class="form-control form-control"
-                                          placeholder="签发者名称"></label>
-                            <label><input type="search" id="serial_number" class="form-control form-control"
-                                          placeholder="序列号"></label>
-                            <label><input type="search" id="start_time" class="form-control form-control"
-                                          placeholder="开始时间"></label>
-                            <label><input type="search" id="end_time" class="form-control form-control"
-                                          placeholder="结束时间"></label>
-                            <label><input type="search" id="fingerprint_sha256" class="form-control form-control"
-                                          placeholder="SHA-256"></label>
-                            <label><input type="search" id="fingerprint_sha1" class="form-control form-control"
-                                          placeholder="SHA-1"></label>
-                            <label><input type="search" id="fingerprint_md5" class="form-control form-control"
-                                          placeholder="MD5"></label>
-                            <label><input type="search" id="alt_name" class="form-control form-control"
-                                          placeholder="备用名称"></label>
-                            <label><input type="search" id="task_id" class="form-control form-control"
-                                          style="display: none;" value="{% if task_id %}{{ task_id }}{% endif %}"
-                                          placeholder="任务ID"></label>
+                            <label><input type="search" id="ip" class="form-control form-control" placeholder="IP"></label>
+                            <label><input type="search" id="port" class="form-control form-control" placeholder="端口号"></label>
+                            <label><input type="search" id="subject_dn" class="form-control form-control" placeholder="主题名称"></label>
+                            <label><input type="search" id="issuer_dn" class="form-control form-control" placeholder="签发者名称"></label>
+                            <label><input type="search" id="serial_number" class="form-control form-control" placeholder="序列号"></label>
+                            <label><input type="search" id="start_time" class="form-control form-control" placeholder="开始时间"></label>
+                            <label><input type="search" id="end_time" class="form-control form-control" placeholder="结束时间"></label>
+                            <label><input type="search" id="fingerprint_sha256" class="form-control form-control" placeholder="SHA-256"></label>
+                            <label><input type="search" id="fingerprint_sha1" class="form-control form-control" placeholder="SHA-1"></label>
+                            <label><input type="search" id="fingerprint_md5" class="form-control form-control" placeholder="MD5"></label>
+                            <label><input type="search" id="alt_name" class="form-control form-control" placeholder="备用名称"></label>
+                            <label>
+                                <input type="search" id="task_id" class="form-control form-control" style="display: none;" value="{% if task_id %}{{ task_id }}{% endif %}" placeholder="任务 ID"></label>
                             <br>
                             <label><input type="submit" class="btn btn-default"></label>
                             <br>
@@ -66,12 +54,10 @@
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center;">
                         <tr>
-                            <th>任务ID</th>
                             <th>IP</th>
                             <th>端口</th>
-                            <th>Subject DN</th>
-                            <th>Subject</th>
-                            <th>Action</th>
+                            <th>主题 DN</th>
+                            <th>主题</th>
                         </tr>
                         </thead>
                         <tbody style="white-space: nowrap; text-align: center;">
@@ -139,8 +125,6 @@
                 },
             },
             columns: [
-                // 对应 API 返回的数据字段
-                {data: 'task_id', visible: false},
                 // {data: 'ip'},
                 {
                     data: 'ip',
@@ -194,17 +178,7 @@
 
                         return html;
                     }
-                },
-                {
-                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
-                    data: null,
-                    render: function (data, type, row) {
-                        let html = '';
-                        html += '<a href="#' + row.task_id + '" class="btn btn-sm btn-danger">删除</a> '
-                        return html
-
-                    }, visible: false
-                },
+                }
                 // Add more columns as needed
             ],
             "language": //把文字变为中文

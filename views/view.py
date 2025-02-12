@@ -5,12 +5,15 @@ import thirdparty
 import requests
 from werkzeug.utils import secure_filename
 from flask import send_file, jsonify, after_this_request, redirect, url_for, flash, request, render_template, session
+from common.mongo import get_nodes_data, del_nodes
 from common.mongo import create_nuclei_project, get_project_data, get_nuclei_data, download_nuclei_data, delete_nuclei_project
 from common.mongo import create_zombie_project, get_zombie_project_data, get_zombie_data, download_zombie_data, delete_zombie_project
-from common.mongo import download_domain_data, download_site_data, download_file_leak_data
+from common.mongo import create_chkapi_project, get_chkapi_project_data, get_chkapi_data, download_chkapi_hae_data, delete_chkapi_project
+from common.mongo import download_domain_data, download_site_data, download_file_leak_data, assets_site_link_nuclei
 from common.mongo import conn_db, query_account, query_account_data, add_user, del_user
-from common.mongo import get_nodes_data, del_nodes
-from common.redis_queue import get_nuclei_queue, get_zombie_queue, del_nuclei_sites, del_zombie_target, del_nuclei_all_sites, del_zombie_all_targets
+from common.redis_queue import get_nuclei_queue, del_nuclei_sites, del_nuclei_all_sites
+from common.redis_queue import get_zombie_queue, del_zombie_target, del_zombie_all_targets
+from common.redis_queue import get_chkapi_queue, del_chkapi_target, del_chkapi_all_targets
 from views.__init__ import app, auth, login_check, check_password, allowed_file
 from views.__init__ import check_email, check_special_char, check_password_content, en_password
 from config import Config
@@ -210,7 +213,6 @@ def get_vul_data(project_id):
     return get_nuclei_data(draw, start, length, project_id)
 
 
-@app.route('/', methods=['GET'])
 @app.route('/ZombieProjectView/<int:page_index>', methods=['GET'])
 @app.route('/ZombieProjectView', methods=['GET'])
 @auth.login_required
@@ -253,7 +255,7 @@ def new_zombie_task():
         user_dict = thirdparty.dict2list(user_dict)
         pass_dict = thirdparty.dict2list(pass_dict)
 
-        create_zombie_project(project_name, ips_list, project_description, service_name, user_dict, pass_dict, batch=0)
+        create_zombie_project(project_name, ips_list, project_description, service_name, user_dict, pass_dict, account=session['account'], batch=0)
         flash('成功创建项目')
         return redirect(url_for('zombie_project_view'))
 
@@ -280,12 +282,12 @@ def batch_zombie_task():
             return redirect(url_for('batch_zombie_task'))
 
         if 'file' not in request.files:
-            flash('请上传IP目标文件（仅支持 txt 文件）')
+            flash('请上传 IP 目标文件（仅支持 txt 文件）')
             return redirect(url_for('batch_zombie_task'))
 
         file = request.files['file']
         if file.filename == '':
-            flash('请上传IP目标文件（仅支持 txt 文件）')
+            flash('请上传 IP 目标文件（仅支持 txt 文件）')
             return redirect(url_for('batch_zombie_task'))
 
         if file and allowed_file(file.filename):
@@ -296,12 +298,12 @@ def batch_zombie_task():
             user_dict = thirdparty.dict2list(user_dict)
             pass_dict = thirdparty.dict2list(pass_dict)
 
-            create_zombie_project(project_name, new_filename, project_description, service_name, user_dict, pass_dict, batch=1)
+            create_zombie_project(project_name, new_filename, project_description, service_name, user_dict, pass_dict, account=session['account'], batch=1)
             flash('成功创建项目')
             return redirect(url_for('zombie_project_view'))
 
         else:
-            flash('请上传IP目标文件（仅支持 txt 文件）')
+            flash('请上传 IP 目标文件（仅支持 txt 文件）')
             return redirect(url_for('batch_zombie_task'))
 
 
@@ -329,47 +331,141 @@ def get_zombie_ret(project_id):
     return get_zombie_data(draw, start, length, project_id)
 
 
-@app.route('/CheckNodes', methods=['GET'])
+@app.route('/ChkAPIProjectView/<int:page_index>', methods=['GET'])
+@app.route('/ChkAPIProjectView', methods=['GET'])
 @auth.login_required
 @login_check
-def check_nodes():
+def chkapi_project_view(page_size=10, page_index=1):
     """
-    查看 Agent 节点状态
+    API 安全检测项目视图
     """
     if request.method == 'GET':
-        return render_template('nodes-status.html')
+        entries = get_chkapi_project_data(page_size, page_index)
+        return render_template('chkapi-project-view.html', page_size=page_size, page=page_index, entries=entries)
 
 
-@app.route('/ClearNodes', methods=['GET'])
+@app.route('/NewChkAPITask', methods=['GET', 'POST'])
 @auth.login_required
 @login_check
-def clear_nodes():
+def new_chkapi_task():
     """
-    清空节点缓存
+    添加 API 安全检测任务
     """
     if request.method == 'GET':
-        try:
-            nodes_data = del_nodes()
-            if nodes_data:
-                flash('成功删除所有 Agent 节点缓存, 请耐心等待回连')
-            else:
-                flash(f'删除 Agent 节点缓存失败')
-        except Exception as e:
-            flash(f'删除 Agent 节点缓存异常 {e}')
-        return redirect(url_for('project_view'))
+        return render_template('new-chkapi-task.html')
+
+    if request.method == 'POST':
+        project_name = request.form.get('project_name')
+        project_description = request.form.get('project_description')
+        cookies = request.form.get('cookies')
+        chrome = request.form.get('chrome')
+        attack_type = request.form.get('attack_type')
+        no_api_scan = request.form.get('no_api_scan')
+        sites = request.form.get('sites')
+        if not project_name:
+            flash('请输入项目名称')
+            return redirect(url_for('new_chkapi_task'))
+
+        if not sites:
+            flash('请输入扫描目标')
+            return redirect(url_for('new_chkapi_task'))
+
+        if not cookies:
+            cookies = ''
+
+        if not chrome:
+            flash('请选择是否开启 chromedriver 扫描')
+            return redirect(url_for('new_chkapi_task'))
+
+        if not attack_type:
+            flash('请选择是否 ATTACK TYPE 选项扫描')
+
+        if not no_api_scan:
+            flash('请选择是否扫描 API 接口漏洞')
+
+        url_list = thirdparty.target2list(sites)
+
+        create_chkapi_project(project_name, url_list, project_description, cookies=cookies, chrome=chrome, attack_type=attack_type, no_api_scan=no_api_scan, account=session['account'], batch=0)
+        flash('成功创建项目')
+        return redirect(url_for('chkapi_project_view'))
 
 
-@app.route('/Ajax/CheckNodes', methods=['GET'])
+@app.route('/BatchChkAPITask', methods=['GET', 'POST'])
 @auth.login_required
 @login_check
-def check_nodes_status():
+def batch_chkapi_task():
+    if request.method == 'GET':
+        return render_template('new-chkapi-batch-task.html')
+
+    if request.method == 'POST':
+        project_name = request.form.get('project_name')
+        project_description = request.form.get('project_description')
+        cookies = request.form.get('cookies')
+        chrome = request.form.get('chrome')
+        attack_type = request.form.get('attack_type')
+        no_api_scan = request.form.get('no_api_scan')
+        if not project_name:
+            flash('请输入项目名称')
+            return redirect(url_for('batch_chkapi_task'))
+
+        if not cookies:
+            cookies = ''
+
+        if not chrome:
+            flash('请选择是否开启 chromedriver 扫描')
+            return redirect(url_for('batch_chkapi_task'))
+
+        if not attack_type:
+            flash('请选择是否 ATTACK TYPE 选项扫描')
+
+        if not no_api_scan:
+            flash('请选择是否扫描 API 接口漏洞')
+
+        if 'file' not in request.files:
+            flash('请上传目标文件（仅支持 txt 文件）')
+            return redirect(url_for('batch_chkapi_task'))
+
+        file = request.files['file']
+        if file.filename == '':
+            flash('请上传目标文件（仅支持 txt 文件）')
+            return redirect(url_for('batch_chkapi_task'))
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            new_filename = f'{thirdparty.TMP_PATH}/{thirdparty.random_choices()}_{filename}'
+            file.save(new_filename)
+
+            create_chkapi_project(project_name, new_filename, project_description, cookies=cookies, chrome=chrome, attack_type=attack_type, no_api_scan=no_api_scan, account=session['account'], batch=1)
+            flash('成功创建项目')
+            return redirect(url_for('chkapi_project_view'))
+
+        else:
+            flash('请上传IP目标文件（仅支持 txt 文件）')
+            return redirect(url_for('batch_chkapi_task'))
+
+
+@app.route('/ChkAPIRet/<project_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def chkapi_ret(project_id):
     """
-    检查节点状态接口
+    查看 ChkAPI 扫描结果
+    """
+    if request.method == 'GET':
+        return render_template('chkapi-hae-ret.html', project_id=project_id, session=session)
+
+
+@app.route('/Ajax/ChkAPIRet/<project_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def get_chkapi_ret(project_id):
+    """
+    ChkAPI 敏感信息扫描结果 Ajax 接口
     """
     draw = int(request.args.get('draw', 0))
     start = int(request.args.get('start', 0))
-    length = int(request.args.get('length', 20))
-    return get_nodes_data(draw, start, length)
+    length = int(request.args.get('length', 10))
+    return get_chkapi_data(draw, start, length, project_id)
 
 
 @app.route('/CheckQueue/<project_id>', methods=['GET'])
@@ -396,6 +492,19 @@ def query_zombie_queue(project_id):
         count = get_zombie_queue(project_id)
         flash(f'{project_id} 队列待扫描目标：{count}')
         return render_template('zombie-ret.html', project_id=project_id)
+
+
+@app.route('/CheckChkAPIQueue/<project_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def query_chkapi_queue(project_id):
+    """
+    查询 zombie 指定队列数量
+    """
+    if request.method == 'GET':
+        count = get_chkapi_queue(project_id)
+        flash(f'{project_id} 队列待扫描目标：{count}')
+        return render_template('chkapi-hae-ret.html', project_id=project_id)
 
 
 @app.route('/Download/VulRet/<project_id>', methods=['GET'])
@@ -450,6 +559,32 @@ def download_zombie_file(project_id):
     else:
         flash('导出 zombie 扫描结果失败')
         return render_template('zombie-ret.html', project_id=project_id)
+
+
+@app.route('/Download/ChkAPIRet/<project_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def download_chkapi_hae_file(project_id):
+    """
+    下载 ChkAPI 敏感信息检测结果
+    """
+    file_path = download_chkapi_hae_data(project_id)
+    if file_path:
+        @after_this_request
+        def _delete_file(response):
+            try:
+                os.unlink(file_path)
+                if os.path.exists(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                logger.warning(e)
+
+            return response
+
+        return send_file(file_path, as_attachment=True)
+    else:
+        flash('导出 ChkAPI 扫描结果失败')
+        return render_template('chkapi-hae-ret.html', project_id=project_id)
 
 
 @app.route('/Download/Domain/<task_id>', methods=['GET'])
@@ -608,6 +743,32 @@ def download_project_file_leak_assets(project_id):
         return redirect(url_for('get_assets_project'))
 
 
+@app.route('/AssetsProject/LinkNucleiTask/<project_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def assets_sites_link_nuclei(project_id):
+    """
+    将资产收集后的站点推送至 Nuclei 项目
+    """
+    file_path = assets_site_link_nuclei(project_id=project_id)
+    if file_path:
+        project_name = '资产收集自动推送'
+        new_filename = file_path
+        project_description = f'{project_id}'
+        nuclei_template_yaml = 'nuclei-templates/http'
+        nuclei_severity = 'critical,high,medium'
+        nuclei_template_tags = ''
+        nuclei_proxy = ''
+        create_nuclei_project(project_name, new_filename, project_description, nuclei_template_yaml, nuclei_template_tags, nuclei_severity, nuclei_proxy, account=session['account'], batch=1)
+        flash('成功推送至 Nuclei 扫描')
+        thirdparty.delete_file(file_path)
+        return redirect(url_for('project_view'))
+
+    else:
+        flash(f'没有找到存活站点, 无法推送至 Nuclei 扫描')
+        return redirect(url_for('get_assets_project'))
+
+
 @app.route('/DelProject/<project_id>', methods=['GET'])
 @auth.login_required
 @login_check
@@ -644,6 +805,25 @@ def del_nuclei_queue(project_id):
         else:
             flash(f'{project_id} Nuclei 扫描队列删除失败')
 
+        return redirect(url_for('project_view'))
+
+
+@app.route('/ClearNucleiSites', methods=['GET'])
+@auth.login_required
+@login_check
+def clear_nuclei_sites():
+    """
+    删除所有 nuclei 待扫描队列
+    """
+    if request.method == 'GET':
+        try:
+            count = del_nuclei_all_sites()
+            if count == 0:
+                flash('已删除 Nuclei 所有待扫描队列')
+            else:
+                flash(f'{count} 个集合 Nuclei 待扫描队列删除失败')
+        except Exception as e:
+            flash(f'删除 Nuclei 项目所有待扫描队列异常 {e}')
         return redirect(url_for('project_view'))
 
 
@@ -686,29 +866,10 @@ def del_zombie_queue(project_id):
         return redirect(url_for('zombie_project_view'))
 
 
-@app.route('/ClearSites', methods=['GET'])
+@app.route('/ClearZombieIPs', methods=['GET'])
 @auth.login_required
 @login_check
-def clear_sites():
-    """
-    删除所有 nuclei 待扫描队列
-    """
-    if request.method == 'GET':
-        try:
-            count = del_nuclei_all_sites()
-            if count == 0:
-                flash('已删除 Nuclei 所有待扫描队列')
-            else:
-                flash(f'{count} 个集合 Nuclei 待扫描队列删除失败')
-        except Exception as e:
-            flash(f'删除 Nuclei 项目所有待扫描队列异常 {e}')
-        return redirect(url_for('project_view'))
-
-
-@app.route('/ClearIPs', methods=['GET'])
-@auth.login_required
-@login_check
-def clear_ips():
+def clear_zombie_ips():
     """
     删除所有 zombie 待扫描队列
     """
@@ -722,6 +883,64 @@ def clear_ips():
         except Exception as e:
             flash(f'删除 Zombie 项目所有待扫描队列异常 {e}')
         return redirect(url_for('zombie_project_view'))
+
+
+@app.route('/DelChkAPIProject/<project_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def del_chkapi_project(project_id):
+    """
+    删除 ChkAPI 项目
+    """
+    if request.method == 'GET':
+        del_s = delete_chkapi_project(project_id)
+        if del_s:
+            flash(f'{project_id} ChkAPI 项目已删除')
+            del_sts = del_zombie_target(project_id)
+            if del_sts:
+                flash(f'{project_id} ChkAPI 扫描队列已删除')
+            else:
+                flash(f'{project_id} ChkAPI 扫描队列删除失败')
+        else:
+            flash(f'{project_id} ChkAPI 项目删除失败')
+
+        return redirect(url_for('chkapi_project_view'))
+
+
+@app.route('/DelChkAPIQueue/<project_id>', methods=['GET'])
+@auth.login_required
+@login_check
+def del_chkapi_queue(project_id):
+    """
+    删除指定 ChkAPI 项目队列
+    """
+    if request.method == 'GET':
+        del_sts = del_chkapi_target(project_id)
+        if del_sts:
+            flash(f'{project_id} ChkAPI 扫描队列已删除')
+        else:
+            flash(f'{project_id} ChkAPI 扫描队列删除失败')
+
+        return redirect(url_for('chkapi_project_view'))
+
+
+@app.route('/ClearChkAPISites', methods=['GET'])
+@auth.login_required
+@login_check
+def clear_chkapi_sites():
+    """
+    删除所有 ChkAPI 待扫描队列
+    """
+    if request.method == 'GET':
+        try:
+            count = del_chkapi_all_targets()
+            if count == 0:
+                flash('已删除 ChkAPI 所有待扫描队列')
+            else:
+                flash(f'{count} 个集合 ChkAPI 待扫描队列删除失败')
+        except Exception as e:
+            flash(f'删除 ChkAPI 项目所有待扫描队列异常 {e}')
+        return redirect(url_for('chkapi_project_view'))
 
 
 @app.route('/NewDomainTask', methods=['GET', 'POST'])
@@ -782,6 +1001,7 @@ def api_newtask():
             'site_capture': site_capture,
             'file_leak': file_leak,
             'only_file_leak': only_file_leak,
+            'account': session['account']
         }
 
         headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
@@ -793,7 +1013,7 @@ def api_newtask():
         elif req.status_code == 200 and data['code'] == 200:
             flash(f'{message}')
         else:
-            flash(f'API 接口错误 {message}')
+            flash(f'资产收集 API 接口错误 {message}')
         return redirect(url_for('get_assets_project'))
 
 
@@ -808,44 +1028,44 @@ def get_assets_project():
         return render_template('api-project-view.html')
 
 
-@app.route('/Ajax/ProjectView', methods=['GET'])
+@app.route('/Ajax/AssetsProjectView', methods=['GET'])
 @auth.login_required
 @login_check
-def ajax_project_view():
+def ajax_assets_project_view():
     """
     项目数据 Ajax 接口
     """
     if request.method == 'GET':
         draw = int(request.args.get('draw', 0))
         start = int(request.args.get('start', 0))
-        length = int(request.args.get('length', 10))
+        length = int(request.args.get('length', 20))
         # 搜索框的值
         project_name = request.args.get('project_name')
         project_description = request.args.get('project_description')
         project_id = request.args.get('project_id')
+        account = session['account']
+
+        # 如果是管理员权限将 account 查询条件置空, 这样可以查看所有项目
+        if '1' in session['purview']:
+            account = None
 
         # 构建外部 API 请求的查询参数
         params = {
             'project_id': project_id,
             'project_name': project_name,
             'project_description': project_description,
+            'account': account,
             'page': start // length + 1,  # 计算页码
             'size': length,  # 每页大小
-            'order': 'create_time',  # 排序顺序，默认为降序
+            'order': None  # 排序顺序, 默认为降序
         }
-        if not project_id:
-            del params['project_id']
 
-        # 发起外部 API 请求
         headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
         req = requests.get(session['assets_api_url'] + '/api/project', params=params, headers=headers)
-
-        # 解析外部 API 返回的数据
         data = req.json()
         items = data.get('items', [])
         total = data.get('total', 0)
 
-        # 构造 DataTables 需要的响应数据格式
         result = {
             'draw': draw,
             'recordsTotal': total,
@@ -855,6 +1075,7 @@ def ajax_project_view():
                 'project_id': item.get('project_id'),
                 'project_name': item.get('project_name'),
                 'project_description': item.get('project_description'),
+                'account': item.get('account'),
                 'create_time': item.get('create_time')
             } for item in items]
         }
@@ -870,6 +1091,10 @@ def delete_assets_project(project_id, option=True):
     删除项目（会删除所有项目下所有任务数据）
     """
     if request.method == 'GET':
+        if not project_id:
+            flash(f'请输入项目 ID')
+            return redirect(url_for('get_assets_project'))
+
         params = {
             'del_task_data': option,
             'project_id': [project_id]
@@ -884,7 +1109,7 @@ def delete_assets_project(project_id, option=True):
         elif req.status_code == 200 and data['code'] == 200:
             flash(f'{project_id} {message}')
         else:
-            flash(f'API 接口错误 {message}')
+            flash(f'资产收集 API 接口错误 {message}')
 
         return redirect(url_for('get_assets_project'))
 
@@ -898,6 +1123,10 @@ def get_task(project_id=None):
     资产收集 -> 任务管理
     """
     if request.method == 'GET':
+        if '1' not in session['purview'] and not project_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         return render_template('api-task.html', project_id=project_id)
 
 
@@ -917,6 +1146,10 @@ def ajax_get_task():
         target = request.args.get('target')
         task_status = request.args.get('task_status')
 
+        if '1' not in session['purview'] and not project_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         params = {
             'project_id': project_id,
             '_id': task_id,
@@ -924,7 +1157,7 @@ def ajax_get_task():
             'status': task_status,
             'page': start // length + 1,
             'size': length,
-            'order': 'task_status',
+            'order': None
         }
 
         headers = {'token': session['assets_api_token'], 'accept': 'application/json'}
@@ -962,9 +1195,13 @@ def ajax_get_task():
 @login_check
 def stop_task(task_id):
     """
-    停止任务接口
+    停止指定任务接口
     """
     if request.method == 'GET':
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         params = {
             'task_id': [
                 task_id
@@ -980,7 +1217,7 @@ def stop_task(task_id):
         elif req.status_code == 200 and data['code'] == 200:
             flash(f'{task_id} {message}')
         else:
-            flash(f'API 接口错误 {message}')
+            flash(f'资产收集 API 接口错误 {message}')
         return redirect(url_for('get_task'))
 
 
@@ -989,11 +1226,15 @@ def stop_task(task_id):
 @login_check
 def del_task(task_id):
     """
-    删除任务接口
+    删除指定任务接口
     """
     if request.method == 'GET':
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         params = {
-            'del_task_data': True,
+            'del_task_data': True,  # 默认删除指定任务的所有数据
             'task_id': [
                 task_id
             ]
@@ -1008,7 +1249,7 @@ def del_task(task_id):
         elif req.status_code == 200 and data['code'] == 200:
             flash(f'{task_id} {message}')
         else:
-            flash(f'API 接口错误 {message}')
+            flash(f'资产收集 API 接口错误 {message}')
         return redirect(url_for('get_task'))
 
 
@@ -1020,6 +1261,10 @@ def del_error_task():
     删除所有失败任务接口
     """
     if request.method == 'GET':
+        if '1' not in session['purview']:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         # 获取所有 error 状态的任务列表
         _task_data = conn_db('task', db_name=Config.API_MONGO_DB).find({'status': 'error'})
         _task_id_list = [str(doc['_id']) for doc in _task_data]
@@ -1041,7 +1286,7 @@ def del_error_task():
         elif req.status_code == 200 and data['code'] == 200:
             flash(message)
         else:
-            flash(f'API 接口错误 {message}')
+            flash(f'资产收集 API 接口错误 {message}')
         return redirect(url_for('get_task'))
 
 
@@ -1054,6 +1299,10 @@ def get_sites(task_id=None):
     资产收集 -> 站点资产
     """
     if request.method == 'GET':
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         return render_template('api-sites.html', task_id=task_id)
 
 
@@ -1080,6 +1329,10 @@ def ajax_get_sites():
         favicon_hash = request.args.get('favicon_hash')
         site_tag = request.args.get('site_tag')
 
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         params = {
             'task_id': task_id,
             'site': site,
@@ -1094,7 +1347,7 @@ def ajax_get_sites():
             'tag': site_tag,
             'page': start // length + 1,
             'size': length,
-            'order': 'task_id',
+            'order': None
         }
         # 检测是合法长度的 task_id
         if not task_id or len(task_id) != 24:
@@ -1143,7 +1396,7 @@ def ajax_get_sites():
                 'favicon': item.get('favicon'),
                 'screenshot': item.get('screenshot'),
                 'fld': item.get('fld'),
-                'tag': item.get('tag'),
+                'tag': item.get('tag')
             } for item in items]
         }
 
@@ -1156,6 +1409,10 @@ def ajax_get_sites():
 @login_check
 def get_domain(task_id=None):
     if request.method == 'GET':
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         return render_template('api-domain.html', task_id=task_id)
 
 
@@ -1177,6 +1434,10 @@ def ajax_get_domains():
         ips = request.args.get('ips')
         source = request.args.get('source')
 
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         params = {
             'task_id': task_id,
             'domain': domain,
@@ -1186,7 +1447,7 @@ def ajax_get_domains():
             'source': source,
             'page': start // length + 1,
             'size': length,
-            'order': 'task_id',
+            'order': None
         }
 
         if not task_id or len(task_id) != 24:
@@ -1236,6 +1497,10 @@ def ajax_get_domains():
 @login_check
 def get_ips(task_id=None):
     if request.method == 'GET':
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         return render_template('api-ips.html', task_id=task_id)
 
 
@@ -1263,6 +1528,10 @@ def ajax_get_ips():
         asn_number = request.args.get('asn_number')
         asn_organization = request.args.get('asn_organization')
 
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         params = {
             'task_id': task_id,
             'ip': ip,
@@ -1278,7 +1547,7 @@ def ajax_get_ips():
             'geo_asn.organization': asn_organization,
             'page': start // length + 1,
             'size': length,
-            'order': 'task_id',
+            'order': None
         }
 
         if not task_id or len(task_id) != 24:
@@ -1349,6 +1618,10 @@ def ajax_get_ips():
 @login_check
 def get_service(task_id=None):
     if request.method == 'GET':
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         return render_template('api-service.html', task_id=task_id)
 
 
@@ -1370,6 +1643,10 @@ def ajax_get_service():
         service_version = request.args.get('service_version')
         service_product = request.args.get('service_product')
 
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         params = {
             'task_id': task_id,
             'service_info.ip': ip,
@@ -1379,7 +1656,7 @@ def ajax_get_service():
             'service_info.product': service_product,
             'page': start // length + 1,
             'size': length,
-            'order': 'task_id',
+            'order': None
         }
 
         if not task_id or len(task_id) != 24:
@@ -1413,7 +1690,7 @@ def ajax_get_service():
             'data': [{
                 'task_id': item.get('task_id'),
                 'service_name': item.get('service_name'),
-                'service_info': item.get('service_info'),
+                'service_info': item.get('service_info')
             } for item in items]
         }
 
@@ -1426,6 +1703,10 @@ def ajax_get_service():
 @login_check
 def get_cert(task_id=None):
     if request.method == 'GET':
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         return render_template('api-cert.html', task_id=task_id)
 
 
@@ -1453,6 +1734,10 @@ def ajax_get_cert():
         fingerprint_md5 = request.args.get('fingerprint_md5')
         alt_name = request.args.get('alt_name')
 
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         params = {
             'task_id': task_id,
             'ip': ip,
@@ -1468,7 +1753,7 @@ def ajax_get_cert():
             'cert.extensions.subjectAltName': alt_name,
             'page': start // length + 1,
             'size': length,
-            'order': 'task_id',
+            'order': None
         }
 
         if not task_id or len(task_id) != 24:
@@ -1531,6 +1816,10 @@ def ajax_get_cert():
 @login_check
 def get_file_leak(task_id=None):
     if request.method == 'GET':
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         return render_template('api-file-leak.html', task_id=task_id)
 
 
@@ -1552,6 +1841,10 @@ def ajax_get_file_leak():
         status_code = request.args.get('status_code')
         title = request.args.get('title')
 
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         params = {
             'task_id': task_id,
             'url': url,
@@ -1561,7 +1854,7 @@ def ajax_get_file_leak():
             'title': title,
             'page': start // length + 1,
             'size': length,
-            'order': 'task_id',
+            'order': None
         }
 
         if not task_id or len(task_id) != 24:
@@ -1611,6 +1904,10 @@ def ajax_get_file_leak():
 @login_check
 def get_cidr(task_id=None):
     if request.method == 'GET':
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
+
         return render_template('api-cidr.html', task_id=task_id)
 
 
@@ -1629,6 +1926,10 @@ def ajax_get_cidr():
         cidr_ip = request.args.get('cidr_ip')
         ip_count = request.args.get('ip_count')
         domain_count = request.args.get('domain_count')
+
+        if '1' not in session['purview'] and not task_id:
+            flash('权限不足, 请联系超级管理员操作')
+            return redirect(url_for('get_assets_project'))
 
         params = {
             'task_id': task_id,
@@ -1673,6 +1974,49 @@ def ajax_get_cidr():
         }
 
         return jsonify(result)
+
+
+@app.route('/CheckNodes', methods=['GET'])
+@auth.login_required
+@login_check
+def check_nodes():
+    """
+    查看 Agent 节点状态
+    """
+    if request.method == 'GET':
+        return render_template('nodes-status.html')
+
+
+@app.route('/ClearNodes', methods=['GET'])
+@auth.login_required
+@login_check
+def clear_nodes():
+    """
+    清空节点缓存
+    """
+    if request.method == 'GET':
+        try:
+            nodes_data = del_nodes()
+            if nodes_data:
+                flash('成功删除所有 Agent 节点缓存, 请耐心等待回连')
+            else:
+                flash(f'删除 Agent 节点缓存失败')
+        except Exception as e:
+            flash(f'删除 Agent 节点缓存异常 {e}')
+        return redirect(url_for('project_view'))
+
+
+@app.route('/Ajax/CheckNodes', methods=['GET'])
+@auth.login_required
+@login_check
+def check_nodes_status():
+    """
+    检查节点状态接口
+    """
+    draw = int(request.args.get('draw', 0))
+    start = int(request.args.get('start', 0))
+    length = int(request.args.get('length', 20))
+    return get_nodes_data(draw, start, length)
 
 
 @app.route('/Users', methods=['GET'])
@@ -1751,15 +2095,15 @@ def register():
         purview = ['2']  # 默认注册权限为普通用户
 
         if not check_email(user_email):
-            flash('邮箱地址不正确.')
+            flash('邮箱地址不正确')
             return render_template('login.html')
 
         if not check_special_char(username):
-            flash('用户名不能包含特殊字符，长度范围应遵循5到15.')
+            flash('用户名不能包含特殊字符, 长度范围应遵循5到15')
             return render_template('login.html')
 
         if not check_password_content(password):
-            flash('检查密码是否为数字和大小写字母的组合，长度范围应遵循8-15.')
+            flash('检查密码是否为数字和大小写字母的组合, 长度范围应遵循8-15')
             return render_template('login.html')
 
         # 判断是否已经存在该用户或邮箱.
@@ -1779,7 +2123,7 @@ def register():
                     flash(f'用户注册异常 {e}')
                     return render_template('login.html')
             else:
-                flash('两次密码输入不一致.')
+                flash('两次密码输入不一致')
                 return render_template('login.html')
 
 

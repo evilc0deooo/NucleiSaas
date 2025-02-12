@@ -30,6 +30,7 @@ class NucleiScan(object):
         self.proxy = proxy.rstrip('/')  # Nuclei 扫描代理
         self.nuclei_rate = 500  # Nuclei 并发线程
         self.poc_template_list = []
+        self.exclude_id = 'open-proxy-internal,open-proxy-portscan'  # 排除指定 id 的模板（逗号分隔，文件）
         os.chmod(self.nuclei_bin, 0o777)
 
     def find_file_recursively(self, poc_templates, search_dirs):
@@ -61,6 +62,7 @@ class NucleiScan(object):
                                   f'-t {scan_nuclei_template} ',
                                   f'-severity {self.nuclei_severity} ',
                                   f'-tags {self.nuclei_tags} ',
+                                  f'-exclude-id {self.exclude_id}',
                                   '-jsonl ',
                                   '-max-host-error 20 ',
                                   f'-rate-limit {self.nuclei_rate} ',
@@ -75,6 +77,7 @@ class NucleiScan(object):
                                   f'-t {scan_nuclei_template} ',
                                   f'-severity {self.nuclei_severity} ',
                                   f'-tags {self.nuclei_tags} ',
+                                  f'-exclude-id {self.exclude_id}',
                                   '-jsonl ',
                                   '-max-host-error 20 ',
                                   f'-rate-limit {self.nuclei_rate} ',
@@ -88,6 +91,7 @@ class NucleiScan(object):
                                   f'-u {target} ',
                                   f'-t {scan_nuclei_template} ',
                                   f'-severity {self.nuclei_severity} ',
+                                  f'-exclude-id {self.exclude_id}',
                                   '-jsonl ',
                                   '-max-host-error 20 ',
                                   f'-rate-limit {self.nuclei_rate} ',
@@ -101,6 +105,7 @@ class NucleiScan(object):
                                   f'-u {target} ',
                                   f'-t {scan_nuclei_template} ',
                                   f'-severity {self.nuclei_severity} ',
+                                  f'-exclude-id {self.exclude_id}',
                                   '-jsonl ',
                                   '-max-host-error 20 ',
                                   f'-rate-limit {self.nuclei_rate} ',
@@ -121,9 +126,9 @@ class NucleiScan(object):
                     data_list.append(_data)
 
                 except json.JSONDecodeError:
-                    logger.error(f'无法解析该行 -> {line}.')
+                    logger.error(f'无法解析该行 -> {line}')
 
-            logger.info(f'目标 {target} 漏洞计数 -> {len(data_list)}.')
+            logger.info(f'目标 {target} 漏洞计数 -> {len(data_list)}')
             for data in data_list:
                 item = {
                     'project_id': self.project_id,
@@ -133,7 +138,8 @@ class NucleiScan(object):
                     'vuln_severity': data.get('info', {}).get('severity', ''),
                     'vuln_url': data.get('matched-at', ''),
                     'curl_command': data.get('curl-command', ''),
-                    'target': data.get('host', '')
+                    'target': data.get('host', ''),
+                    'date': thirdparty.curr_date()
                 }
 
                 # 防御性编程
@@ -144,8 +150,8 @@ class NucleiScan(object):
                     # print(item)
                     conn_db('nuclei_ret').insert_one(item)
                 except Exception as e:
-                    logger.error(f'Nuclei 漏洞结果写入数据库发生异常自动跳过 -> {item}.')
-                    logger.error(f'错误异常信息 -> {e}.')
+                    logger.error(f'Nuclei 漏洞结果写入数据库发生异常自动跳过 -> {item}')
+                    logger.error(f'错误异常信息 -> {e}')
 
     def run(self):
         max_workers = Config.NUCLEI_MAX_WORKERS
@@ -154,9 +160,9 @@ class NucleiScan(object):
                 executor.map(self.nuclei_scan, self.sites)
         except KeyboardInterrupt:
             executor.shutdown(wait=False)
-            logger.error(f'Nuclei 程序被中断，资源已清理完毕.')
+            logger.error(f'Nuclei 程序被中断，资源已清理完毕')
         except Exception as e:
-            logger.error(f'Nuclei 错误异常信息 -> {e}.')
+            logger.error(f'Nuclei 错误异常信息 -> {e}')
 
 
 def run(project_id, _sites, nuclei_template_yaml, tags, severity, proxy):
@@ -165,7 +171,7 @@ def run(project_id, _sites, nuclei_template_yaml, tags, severity, proxy):
     """
     t1 = time.time()
     s = NucleiScan(project_id, _sites, nuclei_template_yaml, tags, severity, proxy, thirdparty.TMP_PATH)
-    logger.info(f'start nuclei scan {len(_sites)} site.')
+    logger.info(f'start nuclei scan {len(_sites)} site')
 
     # 防御式编程
     if not _sites:
@@ -173,7 +179,7 @@ def run(project_id, _sites, nuclei_template_yaml, tags, severity, proxy):
 
     s.run()
     elapse = time.time() - t1
-    logger.info(f'end nuclei scan elapse {elapse}.')
+    logger.info(f'end nuclei scan elapse {elapse}')
 
 
 if __name__ == '__main__':

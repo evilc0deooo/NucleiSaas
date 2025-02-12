@@ -6,7 +6,8 @@ import thirdparty
 from pymongo import MongoClient
 from bson import ObjectId
 from flask import jsonify
-from common.redis_queue import add_nuclei_target, batch_add_data, add_zombie_target
+from common.redis_queue import NucleiRedisQueue, ChkAPIRedisQueue, ZombieRedisQueue
+from common.redis_queue import batch_add_data, add_nuclei_target, add_zombie_target, add_chkapi_target
 from config import Config
 from common.logger import logger
 
@@ -30,19 +31,27 @@ def conn_db(collection, db_name=None):
         return conn[Config.MONGO_DB][collection]
 
 
-def get_project_yaml(project_id):
+def get_nuclei_project(project_id):
     """
     查询指定 nuclei 项目信息
     """
-    project_data = conn_db('project').find_one({'_id': ObjectId(project_id)})
+    project_data = conn_db('nuclei_project').find_one({'_id': ObjectId(project_id)})
     return project_data
 
 
-def get_project_zombie(project_id):
+def get_zombie_project(project_id):
     """
     查询指定 zombie 项目信息
     """
     project_data = conn_db('zombie_project').find_one({'_id': ObjectId(project_id)})
+    return project_data
+
+
+def get_chkapi_project(project_id):
+    """
+    查询指定 chkapi 项目信息
+    """
+    project_data = conn_db('chkapi_project').find_one({'_id': ObjectId(project_id)})
     return project_data
 
 
@@ -53,7 +62,7 @@ def get_project_data(page_size, page_index):
     :param page_index: 页面索引
     """
     offset = (page_index - 1) * page_size
-    project_data = conn_db('project').find().sort('date', -1).skip(offset).limit(page_size)
+    project_data = conn_db('nuclei_project').find().sort('date', -1).skip(offset).limit(page_size)
     project_list = [
         dict(
             project_id=str(project.get('_id')),
@@ -97,15 +106,40 @@ def get_zombie_project_data(page_size, page_index):
     return project_list
 
 
+def get_chkapi_project_data(page_size, page_index):
+    """
+    ChkAPI 项目视图翻页
+    :param page_size: 页面数量
+    :param page_index: 页面索引
+    """
+    offset = (page_index - 1) * page_size
+    project_data = conn_db('chkapi_project').find().sort('date', -1).skip(offset).limit(page_size)
+    project_list = [
+        dict(
+            project_id=str(project.get('_id')),
+            project_name=project.get('project_name'),
+            cookies=project.get('cookies'),
+            chrome=project.get('chrome'),
+            attack_type=project.get('attack_type'),
+            no_api_scan=project.get('no_api_scan'),
+            account=project.get('account'),
+            date=project.get('date')
+        )
+        for project in project_data
+    ]
+
+    return project_list
+
+
 def get_nuclei_data(draw, start, length, project_id='ALL'):
     """
     获取 nuclei 扫描结果
     """
     if project_id != 'ALL':
-        data = conn_db('nuclei_ret').find({'project_id': project_id}).skip(start).limit(length)
+        data = conn_db('nuclei_ret').find({'project_id': project_id}).sort('date', -1).skip(start).limit(length)
         nuclei_vul_total = conn_db('nuclei_ret').count_documents({'project_id': project_id})
     else:
-        data = conn_db('nuclei_ret').find().skip(start).limit(length)
+        data = conn_db('nuclei_ret').find().sort('date', -1).skip(start).limit(length)
         nuclei_vul_total = conn_db('nuclei_ret').count_documents({})  # 获取集合中所有文档的计数
 
     result = {
@@ -121,7 +155,8 @@ def get_nuclei_data(draw, start, length, project_id='ALL'):
             'vuln_severity': item['vuln_severity'],
             'vuln_url': item['vuln_url'],
             'curl_command': item['curl_command'],
-            'target': item['target']
+            'target': item['target'],
+            'date': item['date']
         } for item in data]
     }
 
@@ -133,10 +168,10 @@ def get_zombie_data(draw, start, length, project_id='ALL'):
     获取 zombie 扫描结果
     """
     if project_id != 'ALL':
-        data = conn_db('zombie_ret').find({'project_id': project_id}).skip(start).limit(length)
+        data = conn_db('zombie_ret').find({'project_id': project_id}).sort('date', -1).skip(start).limit(length)
         zombie_ret_total = conn_db('zombie_ret').count_documents({'project_id': project_id})
     else:
-        data = conn_db('zombie_ret').find().skip(start).limit(length)
+        data = conn_db('zombie_ret').find().sort('date', -1).skip(start).limit(length)
         zombie_ret_total = conn_db('zombie_ret').count_documents({})  # 获取集合中所有文档的计数
 
     result = {
@@ -152,6 +187,36 @@ def get_zombie_data(draw, start, length, project_id='ALL'):
             'username': item['username'],
             'password': item['password'],
             'ok': item['OK'],
+            'date': item['date']
+        } for item in data]
+    }
+
+    return jsonify(result)
+
+
+def get_chkapi_data(draw, start, length, project_id='ALL'):
+    """
+    获取 ChkAPI 敏感信息扫描结果
+    """
+    if project_id != 'ALL':
+        data = conn_db('chkapi_ret').find({'project_id': project_id}).sort('date', -1).skip(start).limit(length)
+        zombie_ret_total = conn_db('chkapi_ret').count_documents({'project_id': project_id})
+    else:
+        data = conn_db('chkapi_ret').find().sort('date', -1).skip(start).limit(length)
+        zombie_ret_total = conn_db('chkapi_ret').count_documents({})  # 获取集合中所有文档的计数
+
+    result = {
+        'draw': draw,
+        'recordsTotal': zombie_ret_total,
+        'recordsFiltered': zombie_ret_total,
+        'data': [{
+            'id': str(item['_id']),
+            'project_id': item['project_id'],
+            'name': item['name'],
+            'matches': item['matches'],
+            'url': item['url'],
+            'site': item['site'],
+            'date': item['date']
         } for item in data]
     }
 
@@ -209,7 +274,7 @@ def download_nuclei_data(project_id='ALL'):
                           f'--authenticationDatabase={Config.MONGO_AUTH_DB}',
                           f'--db {Config.MONGO_DB}',
                           '--collection nuclei_ret',
-                          '--type=csv --fields project_id,template_id,target,vuln_url,vuln_name,vuln_severity',
+                          '--type=csv --fields project_id,template_id,target,vuln_url,vuln_name,vuln_severity,date',
                           f'--out {filename}']
     else:
         cmd_parameters = [f'{mongoexport_bin}',
@@ -221,7 +286,7 @@ def download_nuclei_data(project_id='ALL'):
                           f'--db {Config.MONGO_DB}',
                           '--collection nuclei_ret',
                           "--query='{{\"project_id\": \"{_project_id}\"}}'".format(_project_id=project_id),
-                          '--type=csv --fields project_id,template_id,target,vuln_url,vuln_name,vuln_severity',
+                          '--type=csv --fields project_id,template_id,target,vuln_url,vuln_name,vuln_severity,date',
                           f'--out {filename}']
 
     logger.info(' '.join(cmd_parameters))
@@ -253,7 +318,7 @@ def download_zombie_data(project_id='ALL'):
                           f'--authenticationDatabase={Config.MONGO_AUTH_DB}',
                           f'--db {Config.MONGO_DB}',
                           '--collection zombie_ret',
-                          '--type=csv --fields project_id,ip,port,service,username,password,OK',
+                          '--type=csv --fields project_id,ip,port,service,username,password,date',
                           f'--out {filename}']
     else:
         cmd_parameters = [f'{mongoexport_bin}',
@@ -265,7 +330,51 @@ def download_zombie_data(project_id='ALL'):
                           f'--db {Config.MONGO_DB}',
                           '--collection zombie_ret',
                           "--query='{{\"project_id\": \"{_project_id}\"}}'".format(_project_id=project_id),
-                          '--type=csv --fields project_id,ip,port,service,username,password,OK',
+                          '--type=csv --fields project_id,ip,port,service,username,password,date',
+                          f'--out {filename}']
+
+    logger.info(' '.join(cmd_parameters))
+    exec_ret = thirdparty.exec_system(cmd_parameters, timeout=96 * 60 * 60)
+
+    if exec_ret == 'error':
+        return False
+
+    return filename
+
+
+def download_chkapi_hae_data(project_id='ALL'):
+    """
+    使用 mongoexport 导出 ChkAPI 敏感信息检测结果
+    """
+    filename = os.path.join(thirdparty.TMP_PATH, f'{project_id}_{thirdparty.random_choices()}.csv')
+    if thirdparty.get_architecture() == 'ARM':
+        mongoexport_bin = thirdparty.MONGOEXPORT_ARM_BIN
+    else:
+        mongoexport_bin = thirdparty.MONGOEXPORT_UNIX_BIN
+
+    os.chmod(mongoexport_bin, 0o777)
+    if project_id == 'ALL':
+        cmd_parameters = [f'{mongoexport_bin}',
+                          f'--host={Config.MONGO_HOST}',
+                          f'--port={Config.MONGO_PORT}',
+                          f'--username={Config.MONGO_USERNAME}',
+                          f'--password={Config.MONGO_PWD}',
+                          f'--authenticationDatabase={Config.MONGO_AUTH_DB}',
+                          f'--db {Config.MONGO_DB}',
+                          '--collection chkapi_ret',
+                          '--type=csv --fields project_id,site,name,matches,url,date',
+                          f'--out {filename}']
+    else:
+        cmd_parameters = [f'{mongoexport_bin}',
+                          f'--host={Config.MONGO_HOST}',
+                          f'--port={Config.MONGO_PORT}',
+                          f'--username={Config.MONGO_USERNAME}',
+                          f'--password={Config.MONGO_PWD}',
+                          f'--authenticationDatabase={Config.MONGO_AUTH_DB}',
+                          f'--db {Config.MONGO_DB}',
+                          '--collection chkapi_ret',
+                          "--query='{{\"project_id\": \"{_project_id}\"}}'".format(_project_id=project_id),
+                          '--type=csv --fields project_id,site,name,matches,url,date',
                           f'--out {filename}']
 
     logger.info(' '.join(cmd_parameters))
@@ -409,6 +518,48 @@ def download_site_data(task_id='ALL', project_id=None):
     return filename
 
 
+def assets_site_link_nuclei(task_id='ALL', project_id=None):
+    """
+    使用 mongoexport 导出存活站点，方便推送至 nuclei 扫描项目
+    """
+    filename = os.path.join(thirdparty.TMP_PATH, f'{task_id}_{thirdparty.random_choices()}.txt')
+    if thirdparty.get_architecture() == 'ARM':
+        mongoexport_bin = thirdparty.MONGOEXPORT_ARM_BIN
+    else:
+        mongoexport_bin = thirdparty.MONGOEXPORT_UNIX_BIN
+
+    os.chmod(mongoexport_bin, 0o777)
+
+    if project_id:
+        # 根据项目 ID 导出文件泄露资产
+        _task_data = conn_db('task', db_name=Config.API_MONGO_DB).find({'project_id': project_id})
+        _task_id_list = [str(doc['_id']) for doc in _task_data]
+        print(_task_id_list)
+        if not _task_id_list:
+            return False
+
+        query = f'{{"task_id": {{"$in": {json.dumps(_task_id_list)}}}}}'
+
+        cmd_parameters = [f'{mongoexport_bin}',
+                          f'--host={Config.MONGO_HOST}',
+                          f'--port={Config.MONGO_PORT}',
+                          f'--username={Config.MONGO_USERNAME}',
+                          f'--password={Config.MONGO_PWD}',
+                          f'--authenticationDatabase={Config.MONGO_AUTH_DB}',
+                          f'--db {Config.API_MONGO_DB}',
+                          '--collection site',
+                          f'--query=\'{query}\'',
+                          '--type=csv --fields site',
+                          f'--out {filename}']
+
+        logger.info(' '.join(cmd_parameters))
+        exec_ret = thirdparty.exec_system(cmd_parameters, timeout=96 * 60 * 60)
+        if exec_ret == 'error':
+            return False
+
+        return filename
+
+
 def download_file_leak_data(task_id='ALL', project_id=None):
     """
     使用 mongoexport 导出, 防止结果过多卡死
@@ -480,12 +631,12 @@ def delete_nuclei_project(project_id):
     指定 nuclei 项目删除
     """
     try:
-        project_data = conn_db('project').find_one({'_id': ObjectId(project_id)})
+        project_data = conn_db('nuclei_project').find_one({'_id': ObjectId(project_id)})
         if not project_data:
             logger.error(f'{project_id} nuclei 项目不存在')
             return False
 
-        conn_db('project').delete_one({'_id': ObjectId(project_id)})
+        conn_db('nuclei_project').delete_one({'_id': ObjectId(project_id)})
         conn_db('nuclei_ret').delete_many({'project_id': project_id})
         logger.info(f'删除 {project_id} nuclei 项目成功')
         return True
@@ -508,6 +659,23 @@ def delete_zombie_project(project_id):
         return True
     except Exception as e:
         logger.error(f'删除 {project_id} zombie 项目失败 -> {e}')
+        return False
+
+
+def delete_chkapi_project(project_id):
+    """
+    指定 ChkAPI 项目删除
+    """
+    try:
+        project_data = conn_db('chkapi_project').find_one({'_id': ObjectId(project_id)})
+        if not project_data:
+            logger.error(f'{project_id} ChkAPI 项目不存在')
+            return False
+        conn_db('zombie_project').delete_one({'_id': ObjectId(project_id)})
+        logger.info(f'删除 {project_id} ChkAPI 项目成功')
+        return True
+    except Exception as e:
+        logger.error(f'删除 {project_id} ChkAPI 项目失败 -> {e}')
         return False
 
 
@@ -582,7 +750,7 @@ def create_nuclei_project(name, sites, description, nuclei_template_yaml, nuclei
         'account': account,
         'date': thirdparty.curr_date()
     }
-    project_id = conn_db('project').insert_one(project_data).inserted_id
+    project_id = conn_db('nuclei_project').insert_one(project_data).inserted_id
     logger.info(f'新建扫描项目 -> {name} -> {project_id}')
     if batch == 0:
         try:
@@ -592,7 +760,7 @@ def create_nuclei_project(name, sites, description, nuclei_template_yaml, nuclei
         return project_id
     else:
         try:
-            batch_add_data(str(project_id), sites)
+            batch_add_data(NucleiRedisQueue, str(project_id), sites)
         except Exception as e:
             logger.error(f'新建项目失败 -> {name} -> Exception -> {e}')
         return project_id
@@ -621,7 +789,37 @@ def create_zombie_project(name, target, description, service, user_dict, pwd_dic
         return project_id
     else:
         try:
-            batch_add_data(str(project_id), target)
+            batch_add_data(ZombieRedisQueue, str(project_id), target)
+        except Exception as e:
+            logger.error(f'新建项目失败 -> {name} -> Exception -> {e}')
+        return project_id
+
+
+def create_chkapi_project(name, target, description, cookies='', chrome='on', attack_type='0', no_api_scan='0', account='admin', batch=0):
+    """
+    创建 ChkAPI 项目
+    """
+    project_data = {
+        'project_name': name,
+        'project_description': description,
+        'cookies': cookies,
+        'chrome': chrome,
+        'attack_type': attack_type,
+        'no_api_scan': no_api_scan,
+        'account': account,
+        'date': thirdparty.curr_date()
+    }
+    project_id = conn_db('chkapi_project').insert_one(project_data).inserted_id
+    logger.info(f'新建 ChkAPI 爆破服务项目 -> {name} -> {project_id}')
+    if batch == 0:
+        try:
+            add_chkapi_target(str(project_id), target)
+        except Exception as e:
+            logger.error(f'新建项目失败 -> {name} -> Exception -> {e}')
+        return project_id
+    else:
+        try:
+            batch_add_data(ChkAPIRedisQueue, str(project_id), target)
         except Exception as e:
             logger.error(f'新建项目失败 -> {name} -> Exception -> {e}')
         return project_id

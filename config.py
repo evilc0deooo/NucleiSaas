@@ -15,6 +15,8 @@ class Config(object):
     REDIS_DB = 1
     # zombie 扫描队列
     REDIS_DB2 = 2
+    # chkapi 扫描队列
+    REDIS_DB3 = 3
     REDIS_PWD = os.getenv('REDIS_PWD', 'redis_password')  # 避免特殊字符
 
     # mongo 数据集结果展示
@@ -27,11 +29,13 @@ class Config(object):
     MONGO_URL = f'mongodb://{MONGO_USERNAME}:{MONGO_PWD}@{MONGO_HOST}:{MONGO_PORT}'
 
     # 节点数量，最小设置为 3 ,设置的越多切片就越多每个节点分配到的目标就少很多
-    NODES_NUMBER = 5
+    NODES_NUMBER = os.getenv('NODES_NUMBER', '5')
     # 节点延时时间默认 1 分钟检查队列一次
-    NODES_DELAY = 1
+    NODES_DELAY = os.getenv('NODES_NUMBER', '1')
     # Nuclei 进程并发限制
-    NUCLEI_MAX_WORKERS = os.getenv('NUCLEI_MAX_WORKERS', '10')
+    NUCLEI_MAX_WORKERS = os.getenv('NUCLEI_MAX_WORKERS', '5')
+    # ChkAPI 并发限制
+    CHKAPI_MAX_WORKERS = os.getenv('NUCLEI_MAX_WORKERS', '5')
 
     # DetectConfiguration
     API_URL = os.getenv('ASSETS_API_URL', 'http://127.0.0.1:5020')

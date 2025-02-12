@@ -26,37 +26,35 @@
                                     <div class="form-group">
                                         <div class="form-group">
                                             <label>* 项目名称</label>
-                                            <input type="text" class="form-control" name="project_name" value=""
-                                                   placeholder="请输入项目名称">
+                                            <input type="text" class="form-control" name="project_name" value="" placeholder="请输入项目名称">
                                         </div>
                                         <div class="form-group">
-                                            <label>项目描述</label>
-                                            <textarea class="form-control" rows="2" name="project_description"
-                                                      placeholder="请输入项目描述"></textarea>
+                                            <label>项目描述（可选）</label>
+                                            <textarea class="form-control" rows="2" name="project_description" placeholder="请输入项目描述"></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label>* 目标资产</label>
-                                            <textarea class="form-control" rows="7" name="target" value=""
-                                                      placeholder="请输入域名或IP目标支持换行输入（如果选中仅扫描目录请输入带有http协议的url，建议最多一次添加约1000条）"></textarea>
+                                            <p><span class="text-muted">如果开启仅扫描目录功能请输入带有 HTTP 协议的 URL, 建议分批次添加每次最多 1000 条</span></p>
+                                            <textarea class="form-control" rows="7" name="target" placeholder="请输入域名或 IP 目标支持换行输入"></textarea>
                                         </div>
                                         <div class="form-group">
-                                            <label for="exampleSelect1">域名爆破字典</label>
-                                            <select class="form-control" id="exampleSelect1" name="domain_brute_type">
+                                            <label>* 域名爆破字典</label>
+                                            <select class="form-control" name="domain_brute_type">
                                                 <option value="top2w">高频域名字典</option>
                                                 <option value="test">测试域名字典</option>
                                             </select>
-                                            <span class="form-text text-muted">选择爆破字典</span>
+                                            <span class="form-text text-muted">选择域名爆破字典</span>
                                         </div>
                                         <div class="form-group">
-                                            <label for="exampleSelect2">端口扫描</label>
-                                            <select class="form-control" id="exampleSelect2" name="port_scan_type">
+                                            <label>* 端口扫描</label>
+                                            <select class="form-control" name="port_scan_type">
                                                 <option value="custom">自定义端口</option>
-                                                <option value="top10">TOP10 Web端口</option>
-                                                <option value="top100">高频渗透端口</option>
-                                                <option value="top1000">TOP1000</option>
-                                                <option value="all">全部端口</option>
+                                                <option value="top10">TOP 10（常见 Web 端口）</option>
+                                                <option value="top100">TOP 100（高频渗透端口）</option>
+                                                <option value="top1000">TOP 1000（默认内置端口）</option>
+                                                <option value="all">全部端口（谨慎开启）</option>
                                             </select>
-                                            <span class="form-text text-muted">选择扫描字典</span>
+                                            <span class="form-text text-muted">选择端口扫描范围</span>
                                         </div>
                                         <div class="form-group">
                                             <label>自定义端口</label>
@@ -77,22 +75,20 @@
                                                     智能域名生成
                                                 </label>
                                             </div>
-                                            <p><span class="text-muted">针对大量资产尽量关闭该功能（影响速度效率）</span></p>
+                                            <p><span class="text-muted">非必要勿选此功能, 针对大量资产时应该关闭该功能, 否则影响速度, 默认内置字典及 DNS API 接口已足够覆盖</span></p>
                                             <div class="checkbox">
                                                 <label>
                                                     <input type="checkbox" name="dns_query_plugin" checked value="true">
                                                     DNS API查询
                                                 </label>
                                             </div>
-                                            <p><span class="text-muted">批量执行DNS API 域名接口查询插件</span></p>
+                                            <p><span class="text-muted">执行 DNS API 接口查询插件</span></p>
                                             <div class="checkbox">
                                                 <label>
-                                                    <input type="checkbox" name="skip_not_found_domain" value="true">
+                                                    <input type="checkbox" name="skip_not_found_domain" checked value="true">
                                                     跳过域名泛解析
                                                 </label>
-                                                <p><span
-                                                        class="text-muted">只针对DNS API 查询进行处理，其他子域名搜集方法自带泛解析检测</span>
-                                                </p>
+                                                <p><span class="text-muted">只针对 DNS API 接口查询结果进行处理, 其他子域名搜集方法自带泛解析检测</span></p>
                                             </div>
                                             <div class="checkbox">
                                                 <label>
@@ -103,7 +99,7 @@
                                             <div class="checkbox">
                                                 <label>
                                                     <input type="checkbox" name="skip_scan_cdn_ip" checked value="true">
-                                                    跳过CDN
+                                                    跳过 CDN
                                                 </label>
                                                 <p><span
                                                         class="text-muted">跳过 CDN IP 进行端口扫描</span>
@@ -118,7 +114,7 @@
                                             <div class="checkbox">
                                                 <label>
                                                     <input type="checkbox" name="ssl_cert" value="true">
-                                                    SSL证书
+                                                    SSL 证书
                                                 </label>
                                             </div>
                                             <div class="checkbox">
@@ -138,25 +134,21 @@
                                                     <input type="checkbox" name="only_file_leak" value="true">
                                                     仅目录扫描
                                                 </label>
-                                                <p><span
-                                                        class="text-muted">说明：开启后会其他功能模块都会跳过扫描，所以强烈建议站点URL提前探测过存活</span>
-                                                </p>
+                                                <p><span class="text-muted">开启后任务流程只支持站点探测和目录扫描两个模块, 如果已经探测过存活则不需要开启站点探测</span></p>
                                             </div>
                                             <div class="checkbox">
                                                 <label>
                                                     <input type="checkbox" name="os_detection" value="true" disabled>
                                                     操作系统识别
                                                 </label>
-                                                <p><span
-                                                        class="text-muted">说明：开启后会被WAF拦截, 开启需要 root 权限</span>
-                                                </p>
+                                                <p><span class="text-muted">非必要勿选此功能, 开启后会被 WAF 拦截, 开启需要 ROOT 权限</span></p>
                                             </div>
                                             <div class="checkbox">
                                                 <label>
                                                     <input type="checkbox" name="site_capture" disabled value="true">
                                                     站点截图
                                                 </label>
-                                                <p><span class="text-muted">暂不开启截图，耗费资源过大</span></p>
+                                                <p><span class="text-muted">暂不开启截图, 耗费资源过大</span></p>
                                             </div>
                                         </div>
                                         <!-- 更多选项... -->
@@ -164,7 +156,7 @@
 
                                 </div>
                                 <div class="col-sm-6">
-                                    <input type="submit" value="提交" class="btn btn-default float-right">
+                                    <input type="submit" value="提交任务" class="btn btn-default float-right">
                                 </div>
                                 </br></br>
                             </div>

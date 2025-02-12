@@ -31,37 +31,32 @@
                     <div>
                         <form id="searchForm">
                             <div class="form-group">搜索</div>
-                            <label><input type="search" id="task_id" class="form-control form-control"
-                                          placeholder="任务ID"></label>
-                            <label><input type="search" id="target" class="form-control form-control"
-                                          placeholder="任务目标"></label>
-                            <label><input type="search" id="task_status" class="form-control form-control"
-                                          placeholder="任务状态"></label>
-                            <label><input type="search" id="project_id" class="form-control form-control"
-                                          style="display: none;" value="{% if project_id %}{{ project_id }}{% endif %}"
-                                          placeholder="项目ID"></label>
+                            <label><input type="search" id="task_id" class="form-control form-control" placeholder="任务 ID"></label>
+                            <label><input type="search" id="target" class="form-control form-control" placeholder="任务目标"></label>
+                            <label><input type="search" id="task_status" class="form-control form-control" placeholder="任务状态"></label>
+                            <label>
+                                <input type="search" id="project_id" class="form-control form-control" style="display: none;" value="{% if project_id %}{{ project_id }}{% endif %}" placeholder="项目 ID">
+                            </label>
                             <br>
-                            <label><input type="submit" class="btn btn-default"></label><br>
+                            <label><input type="submit" class="btn btn-default"></label>
+                            {% if '1' in session['purview'] %}
+                            <label><a href="/DelTask/ErrorStatus" class="btn btn-primary">删除所有失败任务!!!</a></label>
+                            {% endif %}
+                            <br>
                         </form>
                     </div>
                     <br>
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center; vertical-align: middle; ">
                         <tr>
-                            <th>任务ID</th>
-                            <th>项目名称</th>
                             <th>目标</th>
                             <th>统计</th>
                             <th>任务状态</th>
-                            <th>类型</th>
-                            <th>标签</th>
                             <th>耗时</th>
-                            <th>CeleryID</th>
-                            <th>Project ID</th>
                             <th>配置项</th>
-                            <th>Start Time</th>
-                            <th>End Time</th>
-                            <th>Action</th>
+                            <th>开始时间</th>
+                            <th>结束时间</th>
+                            <th>操作选项</th>
                         </tr>
                         </thead>
                         <tbody style="white-space: nowrap; text-align: center; vertical-align: middle; ">
@@ -116,11 +111,7 @@
             },
 
             columns: [
-                // 对应 API 返回的数据字段
-                {data: 'task_id', visible: false},
-                {data: 'project_name', visible: false},
                 {
-                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
                     data: null,
                     render: function (data, type, row) {
                         let html = '';
@@ -155,8 +146,6 @@
                         return html;
                     }
                 },
-                {data: 'type', visible: false},
-                {data: 'task_tag', visible: false},
                 {
                     data: 'service',
                     render: function (data) {
@@ -173,8 +162,6 @@
                         }
                     }
                 },
-                {data: 'celery_id', visible: false},
-                {data: 'project_id', visible: false},
                 {
                     data: 'options',
                     render: function (data) {
@@ -185,7 +172,7 @@
                                     html += key + ': ' + (data[key] ? data[key] : 'false') + '</br>';
                                 }
                             }
-                            return '<button class="btn btn-sm btn-default service-popover" data-toggle="popover" data-html="true" data-content="' + html + '">options</button>';
+                            return '<button class="btn btn-sm btn-default service-popover" data-toggle="popover" data-html="true" data-content="' + html + '">配置详情</button>';
                         } else {
                             return '-';
                         }
@@ -204,8 +191,7 @@
                         return html
 
                     }
-                },
-                // Add more columns as needed
+                }
             ],
 
             "language": //把文字变为中文
@@ -229,7 +215,7 @@
                         "sLast": ">>" //尾页
                     },
                 },
-            'aLengthMenu': [100, 500, 1000], //设置每页显示记录的下拉菜单
+            'aLengthMenu': [20, 50, 100, 500, 1000], //设置每页显示记录的下拉菜单
         });
         // 初始化所有带有 .service-popover 类的按钮为Popover
         $('[data-toggle="popover"]').popover({

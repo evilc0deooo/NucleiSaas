@@ -1,0 +1,94 @@
+{% include 'header.html' %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><small> API 安全检测 </small></h1>
+                </div><!-- /.col -->
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <a href="/BatchChkAPITask" class="btn btn-default">API 安全批量检测</a>
+                    </ol>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <div class="content">
+        <form action="/NewChkAPITask" method="POST">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <div class="form-group">
+                                            <label>* 项目名称</label>
+                                            <input type="text" class="form-control" name="project_name" value="" placeholder="请输入项目名称">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>项目描述（可选项）</label>
+                                            <textarea class="form-control" rows="2" name="project_description" placeholder="请输入项目描述"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Headers Cookie</label>
+                                            <textarea class="form-control" rows="2" name="cookies" placeholder="请输入携带 Headers Cookie 头"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>* Chromedriver</label>
+                                            <select class="form-control" name="chrome">
+                                                <option value="on">使用 Chromedriver 渲染</option>
+                                                <option value="off">关闭 Chromedriver 渲染</option>
+                                            </select>
+                                            <span class="form-text text-muted">选择是否开启 Chromedriver 扫描</span>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>* 攻击类型</label>
+                                            <select class="form-control" name="attack_type">
+                                                <option value="1">收集并探测</option>
+                                                <option value="0">仅收集</option>
+                                            </select>
+                                            <span class="form-text text-muted">请选择是否攻击扫描类型</span>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>* API 接口漏洞探测</label>
+                                            <select class="form-control" name="no_api_scan">
+                                                <option value="0">开启扫描</option>
+                                                <option value="1">关闭扫描</option>
+                                            </select>
+                                            <span class="form-text text-muted">选择是否扫描 API 接口漏洞</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>* URL 列表</label>
+                                        <textarea class="form-control" rows="15" name="sites" placeholder="请输入目标资产支持换行（必须带有 HTTP 协议头）"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <input type="submit" value="提交任务" class="btn btn-default float-right">
+                                </div>
+                                </br></br>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.card-body -->
+                </div>
+                <!-- /.card -->
+            </div>
+            <!-- /.col-md-6 -->
+            <!-- /.row -->
+    </div><!-- /.container-fluid -->
+    <!-- /.content -->
+    </form>
+</div>
+</div>
+<!-- /.content-wrapper -->
+
+{% include 'footer.html' %}

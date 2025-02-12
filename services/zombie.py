@@ -18,29 +18,28 @@ https://chainreactors.github.io/wiki/zombie/start/#_3
 class ZombieScan(object):
     def __init__(self, target, service, user_dict, pwd_dict, tmp_dir):
         # 目前支持的爆破服务
-        self.service_list = ['ssh', 'smb', 'http', 'tomcat', 'kibana', 'mysql', 'mssql', 'oracle', 'mongo', 'mongodb',
-                             'postgre', 'redis', 'ftp', 'smtp', 'pop3', 'ldap', 'telnet', 'vnc', 'rdp']
+        self.service_list = ['ssh', 'smb', 'http', 'tomcat', 'kibana', 'mysql', 'mssql', 'oracle', 'mongo', 'mongodb', 'postgre', 'redis', 'ftp', 'smtp', 'pop3', 'ldap', 'telnet', 'vnc', 'rdp']
 
         self.target = target
         self.service = service
 
         # 根据服务内置一些账号
         if not user_dict or (len(user_dict) == 1 and not user_dict[0]):
-            if service == 'mysql':
+            if self.service == 'mysql':
                 user_dict = ['root', 'admin']
-            elif service == 'ssh':
+            elif self.service == 'ssh':
                 user_dict = ['root', 'ubuntu', 'oracle']
-            elif service == 'tomcat':
+            elif self.service == 'tomcat':
                 user_dict = ['tomcat']
-            elif service == 'mssql':
+            elif self.service == 'mssql':
                 user_dict = ['sa']
-            elif service == 'oracle':
+            elif self.service == 'oracle':
                 user_dict = ['system', 'sys']
-            elif service == 'mongo':
+            elif self.service == 'mongo':
                 user_dict = ['admin']
-            elif service == 'rdp':
+            elif self.service == 'rdp':
                 user_dict = ['administrator']
-            elif service == 'redis':
+            elif self.service == 'redis':
                 user_dict = ['null']
             else:
                 user_dict = ['']
@@ -58,8 +57,8 @@ class ZombieScan(object):
             self.zombie_bin = thirdparty.ZOMBIE_UNIX_BIN
 
         self.tmp_dir = tmp_dir
-        self.zombie_user_dict = os.path.join(tmp_dir, f'zombie_{service}_user_{thirdparty.random_choices()}')
-        self.zombie_pass_dict = os.path.join(tmp_dir, f'zombie_{service}_pass_{thirdparty.random_choices()}')
+        self.zombie_user_dict = os.path.join(tmp_dir, f'zombie_{self.service}_user_{thirdparty.random_choices()}')
+        self.zombie_pass_dict = os.path.join(tmp_dir, f'zombie_{self.service}_pass_{thirdparty.random_choices()}')
         self.zombie_gen_output_path = os.path.join(tmp_dir, f'zombie_gen_{thirdparty.random_choices()}')
         self.zombie_output_path = os.path.join(tmp_dir, f'zombie_scan_{thirdparty.random_choices()}.json')
         os.chmod(self.zombie_bin, 0o777)
@@ -76,7 +75,7 @@ class ZombieScan(object):
             for pwd in self.pwd_dict:
                 f.write(f'{pwd}\n')
 
-        logger.info(f'zombie 生成 {self.service} 服务临时账号密码字典.')
+        logger.info(f'zombie 生成 {self.service} 服务临时账号密码字典')
 
     def target_write(self):
         """
@@ -91,7 +90,7 @@ class ZombieScan(object):
                 f.write(target + '\n')
                 count += 1
 
-        logger.info(f'本次 zombie 需要爆破目标计数 -> {count}.')
+        logger.info(f'本次 zombie 需要爆破目标计数 -> {count}')
 
     def zombie(self):
         """
@@ -143,7 +142,7 @@ class ZombieScan(object):
 
     def run(self):
         if self.service not in self.service_list:
-            logger.error(f'目前不支持该服务 {self.service} 扫描.')
+            logger.error(f'目前不支持该服务 {self.service} 扫描')
             return []
 
         self.target_write()
@@ -153,7 +152,7 @@ class ZombieScan(object):
 
         # 删除临时文件
         self._delete_file()
-        logger.info(f'end zombie scan output result -> {len(output)}.')
+        logger.info(f'end zombie scan output result -> {len(output)}')
         return output
 
 
@@ -171,18 +170,18 @@ def run(_target, service, user_dict, pwd_dict, tmp=None):
 
     t1 = time.time()
     s = ZombieScan(_target, service, user_dict, pwd_dict, tmp)
-    logger.info(f'start zombie scan {len(_target)} target ip.')
+    logger.info(f'start zombie scan {len(_target)} target ip')
 
     zombie_results = s.run()
     elapse = time.time() - t1
-    logger.info(f'end zombie scan elapse {elapse}.')
+    logger.info(f'end zombie scan elapse {elapse}')
     print(zombie_results)
     return zombie_results
 
 
 if __name__ == '__main__':
-    t = ['127.0.0.1']
+    t = ['192.168.3.183']
     s = 'ssh'
-    u = ['']
-    p = ['']
+    u = ['ubuntu']
+    p = ['Passw0rd']
     run(t, s, u, p)

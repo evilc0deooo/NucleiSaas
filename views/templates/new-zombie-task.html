@@ -31,17 +31,15 @@
                                     <div class="form-group">
                                         <div class="form-group">
                                             <label>* 项目名称</label>
-                                            <input type="text" class="form-control" name="project_name" value=""
-                                                   placeholder="请输入项目名称">
+                                            <input type="text" class="form-control" name="project_name" value="" placeholder="请输入项目名称">
                                         </div>
                                         <div class="form-group">
-                                            <label>项目描述</label>
-                                            <textarea class="form-control" rows="2" name="project_description"
-                                                      placeholder="请输入项目描述"></textarea>
+                                            <label>项目描述（可选项）</label>
+                                            <textarea class="form-control" rows="2" name="project_description" placeholder="请输入项目描述"></textarea>
                                         </div>
                                         <div class="form-group">
-                                            <label for="exampleSelect2">爆破服务</label>
-                                            <select class="form-control" id="exampleSelect2" name="service_name">
+                                            <label>* 爆破服务</label>
+                                            <select class="form-control" name="service_name">
                                                 <option value="ssh">SSH</option>
                                                 <option value="smb">SMB</option>
                                                 <option value="http">HTTP</option>
@@ -59,31 +57,27 @@
                                                 <option value="ldap">LDAP</option>
                                                 <option value="vnc">VNC</option>
                                                 <option value="rdp">RDP</option>
-                                                <option value="telnet">Telnet (WARNNING 未经过充分测试) (WARNNING 不支持全部版本)
-                                                </option>
+                                                <option value="telnet">Telnet (WARNNING 未经过充分测试) (WARNNING 不支持全部版本)</option>
                                             </select>
                                             <span class="form-text text-muted">选择爆破服务</span>
                                         </div>
                                         <div class="form-group">
-                                            <label>用户名字典</label>
-                                            <textarea class="form-control" rows="5" name="user_dict" value=""
-                                                      placeholder="请输入爆破服务的用户名（换行分隔），不填写则使用服务默认用户名"></textarea>
+                                            <label>用户名字典（可选项）</label>
+                                            <textarea class="form-control" rows="5" name="user_dict" placeholder="请输入爆破服务的用户名（换行分隔），不填写则使用服务默认用户名"></textarea>
                                         </div>
                                         <div class="form-group">
-                                            <label>* 密码字典</label>
-                                            <textarea class="form-control" rows="5" name="pass_dict" value=""
-                                                      placeholder="请输入爆破服务的密码（换行分隔），不填写则使用内置默认密码"></textarea>
+                                            <label>密码字典（可选项）</label>
+                                            <textarea class="form-control" rows="5" name="pass_dict" placeholder="请输入爆破服务的密码（换行分隔），不填写则使用内置默认密码"></textarea>
                                         </div>
                                         <!-- 更多选项... -->
                                     </div>
                                     <div class="form-group">
                                         <label>* IP 列表</label>
-                                        <textarea class="form-control" rows="15" name="ips_list" value=""
-                                                  placeholder="请输入 IP 目标资产支持换行（支持 hydra 目标解析输入 8.8.8.1:3306 / 8.8.8.1）"></textarea>
+                                        <textarea class="form-control" rows="15" name="ips_list" placeholder="请输入 IP 目标资产支持换行（支持 hydra 目标解析输入 8.8.8.1:3306 / 8.8.8.1）"></textarea>
                                     </div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <input type="submit" value="提交" class="btn btn-default float-right">
+                                    <input type="submit" value="提交任务" class="btn btn-default float-right">
                                 </div>
                                 </br></br>
                             </div>

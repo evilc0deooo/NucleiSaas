@@ -82,7 +82,7 @@ class ZmapScan(object):
         with open(self.zmap_output_path, 'r') as csvfile:
             csv_reader = csv.reader(csvfile)
             if not csv_reader:
-                logger.info(f'本次 zmap 扫描结果数量 -> {self.count}.')
+                logger.info(f'本次 zmap 扫描结果数量 -> {self.count}')
                 return
 
             for row in csv_reader:
@@ -92,7 +92,7 @@ class ZmapScan(object):
                     f.write('\n'.join(modified_row) + '\n')
                 self.count += 1
 
-        logger.info(f'本次 zmap 扫描结果数量 -> {self.count}.')
+        logger.info(f'本次 zmap 扫描结果数量 -> {self.count}')
 
     def run(self):
         self.zmap_scan()

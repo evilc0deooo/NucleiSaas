@@ -34,6 +34,9 @@
                     <a href="/DelZombieQueue/{{ project_id }}" class="btn btn-primary">清空队列(仅该项目)</a>
                     <a href="/DelZombieProject/{{ project_id }}" class="btn btn-danger">删除项目(会清空数据)</a>
                     {% endif %}
+                    {% if project_id == 'ALL' %}
+                    <a href="/ClearZombieIPs" class="btn btn-primary">清空队列(所有项目)</a>
+                    {% endif %}
                     <br><br>
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center;">
@@ -43,6 +46,7 @@
                             <th data-name="service">服务</th>
                             <th data-name="username">账户</th>
                             <th data-name="password">密码</th>
+                            <th data-name="date">时间</th>
                         </tr>
                         </thead>
                         <tbody style="white-space: nowrap; text-align: center;">
@@ -130,6 +134,17 @@
                         let html = '';
                         if (data && data.length > 0) {
                             html += '<p><span class="badge badge-dark">' + data + '</span></p>'
+                            return html;
+                        }
+                    }
+                },
+                // {data: 'date'},
+                {
+                    data: 'date',
+                    render: function (data) {
+                        let html = '';
+                        if (data && data.length > 0) {
+                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
                             return html;
                         }
                     }

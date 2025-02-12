@@ -32,19 +32,14 @@
                         {% include 'api-nav-link.html' %}
                         <form id="searchForm">
                             <div class="form-group">搜索</div>
-                            <label><input type="search" id="domain" class="form-control form-control"
-                                          placeholder="域名"></label>
-                            <label><input type="search" id="record" class="form-control form-control"
-                                          placeholder="解析值"></label>
-                            <label><input type="search" id="record_type" class="form-control form-control"
-                                          placeholder="解析类型"></label>
-                            <label><input type="search" id="ips" class="form-control form-control"
-                                          placeholder="IP"></label>
-                            <label><input type="search" id="source" class="form-control form-control"
-                                          placeholder="Source"></label>
-                            <label><input type="search" id="task_id" class="form-control form-control"
-                                          style="display: none;" value="{% if task_id %}{{ task_id }}{% endif %}"
-                                          placeholder="任务ID"></label>
+                            <label><input type="search" id="domain" class="form-control form-control" placeholder="域名"></label>
+                            <label><input type="search" id="record" class="form-control form-control" placeholder="解析值"></label>
+                            <label><input type="search" id="record_type" class="form-control form-control" placeholder="解析类型"></label>
+                            <label><input type="search" id="ips" class="form-control form-control" placeholder="IP"></label>
+                            <label><input type="search" id="source" class="form-control form-control" placeholder="数据来源"></label>
+                            <label>
+                                <input type="search" id="task_id" class="form-control form-control" style="display: none;" value="{% if task_id %}{{ task_id }}{% endif %}" placeholder="任务 ID">
+                            </label>
                             <br>
                             <label><input type="submit" class="btn btn-default"></label>
                             <br>
@@ -54,14 +49,11 @@
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center;">
                         <tr>
-                            <th>任务ID</th>
                             <th>域名</th>
                             <th>解析值</th>
                             <th>解析类型</th>
                             <th>IP 地址</th>
-                            <th>Source</th>
-                            <th>fld</th>
-                            <th>Action</th>
+                            <th>数据来源</th>
                         </tr>
                         </thead>
                         <tbody style="white-space: nowrap; text-align: center;">
@@ -117,8 +109,6 @@
                 },
             },
             columns: [
-                // 对应 API 返回的数据字段
-                {data: 'task_id', visible: false},
                 // {data: 'domain'},
                 {
                     data: 'domain',
@@ -179,19 +169,7 @@
                             return html;
                         }
                     }
-                },
-                {data: 'fld', visible: false},
-                {
-                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
-                    data: null,
-                    render: function (data, type, row) {
-                        let html = '';
-                        html += '<a href="#' + row.task_id + '" class="btn btn-sm btn-default">删除</a> '
-                        return html
-
-                    }, visible: false
-                },
-                // Add more columns as needed
+                }
             ],
             "language": //把文字变为中文
                 {

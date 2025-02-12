@@ -9,7 +9,7 @@
     <!-- Default to the left -->
     <div class="float-left d-none d-sm-inline">Nuclei 3.2.5&copy; 2023-2025 <a href="#"></a> </div>
     <!-- To the right -->
-    <div class="float-right d-none d-sm-inline" id="clock"></div>
+    <div class="float-right d-none d-sm-inline">Nuclei Saas Platform Beta</div>
 </footer>
 </div>
 <!-- ./wrapper -->
@@ -27,10 +27,8 @@
 <!-- DataTables  & Plugins -->
 <script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
-<script
-        src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
-<script
-        src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
 <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
 <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
 <script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
@@ -63,20 +61,3 @@
         {% endfor %}
     {% endif %}
 {% endwith %}
-
-
-<!-- 主要的 JavaScript 代码 -->
-<script>
-    $(document).ready(function () {
-        // 更新时间函数
-        function updateTime() {
-            let now = moment(); // 使用 moment.js 获取当前时间
-            let formattedTime = now.format('YYYY-MM-DD HH:mm:ss'); // 格式化时间
-
-            // 更新页面中的时间显示
-            $('#clock').text('Date：'+formattedTime);
-        }
-        // 每秒更新一次时间
-        setInterval(updateTime, 1000);
-    });
-</script>

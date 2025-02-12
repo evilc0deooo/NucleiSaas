@@ -10,6 +10,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Nuclei Saas | Platform</title>
+    <!-- 引入 favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='dist/img/favicon-32x32.ico') }}" type="image/x-icon">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="{{ url_for('static', filename='plugins/fontawesome-free/css/all.min.css') }}">
     <!-- icheck bootstrap -->
@@ -21,12 +23,9 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <!-- Theme style -->
     <link rel="stylesheet" href="{{ url_for('static', filename='dist/css/adminlte.min.css') }}">
     <!-- DataTables -->
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
     <style>
         /* Custom class for left-aligned content in the specific column */
         .left-aligned-column {
@@ -52,7 +51,6 @@ scratch. This page gets rid of all links and provides the needed markup only.
                         <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
                             <li><a href="/NewDomainTask" class="dropdown-item">资产收集</a></li>
                             <li class="dropdown-divider"></li>
-
                             <li class="dropdown-submenu dropdown-hover">
                                 <a id="dropdownSubMenu2" href="#" role="button" data-toggle="dropdown"
                                    aria-haspopup="true" aria-expanded="false" class="dropdown-item dropdown-toggle">漏洞扫描</a>
@@ -61,6 +59,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
                                     <li><a href="/BatchTask" class="dropdown-item">Nuclei 批量扫描</a></li>
                                     <li><a href="/NewZombieTask" class="dropdown-item">弱口令扫描</a></li>
                                     <li><a href="/BatchZombieTask" class="dropdown-item">弱口令批量扫描</a></li>
+                                    <li><a href="/NewChkAPITask" class="dropdown-item">API 安全扫描</a></li>
+                                    <li><a href="/BatchChkAPITask" class="dropdown-item">API 安全批量扫描</a></li>
                                 </ul>
                             </li>
 
@@ -99,21 +99,27 @@ scratch. This page gets rid of all links and provides the needed markup only.
                     </li>
                     <li class="nav-item dropdown">
                         <a href="#" data-toggle="dropdown" aria-haspopup="true"
+                           aria-expanded="true" class="nav-link dropdown-toggle">API 安全项目</a>
+                        <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
+                            <li><a href="/ChkAPIProjectView" class="dropdown-item">项目视图</a></li>
+                            {% if '1' in session['purview'] %}
+                            <li><a href="/ChkAPIRet/ALL" class="dropdown-item">敏感信息合集</a></li>
+                            <!-- <li><a href="/ChkAPIDiffRet/ALL" class="dropdown-item">DiffHash 合集</a></li> -->
+                            {% endif %}
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a href="#" data-toggle="dropdown" aria-haspopup="true"
                            aria-expanded="true" class="nav-link dropdown-toggle">系统管理</a>
                         <ul aria-labelledby="dropdownSubMenu1" class="dropdown-menu border-0 shadow">
-                            <li><a href="/CheckNodes" class="dropdown-item">检查节点</a></li>
+                            <li><a href="/CheckNodes" class="dropdown-item">检查节点状态</a></li>
                             <li><a href="/ClearNodes" class="dropdown-item">清除节点缓存</a></li>
-                            <!--  <li><a href="/GenASN" class="dropdown-item">地区或国家CIDR生成</a></li>-->
-                            <!--  <li><a href="/NewZmapTask" class="dropdown-item">Zmap 端口扫描（单主机）</a></li>-->
                             {% if '1' in session['purview'] %}
                             <li class="dropdown-divider"></li>
-                            <li><a href="/Users" class="dropdown-item">用户管理</a></li>
-                            <li><a href="/#" class="dropdown-item">平台 API 配置</a></li>
-                            {% endif %}
+                            <li><a href="/Users" class="dropdown-item">平台用户管理</a></li>
                             <li class="dropdown-divider"></li>
-                            <li><a href="/ClearSites" class="dropdown-item">删除所有 Nuclei 扫描队列!!!</a></li>
-                            <li><a href="/ClearIPs" class="dropdown-item">删除所有 Zombie 扫描队列!!!</a></li>
-                            <li><a href="/DelTask/ErrorStatus" class="dropdown-item">删除所有失败的资产收集任务!!!</a></li>
+                            <li><a href="/API/Config" class="dropdown-item">平台 API 配置</a></li>
+                            {% endif %}
                         </ul>
                     </li>
                 </ul>

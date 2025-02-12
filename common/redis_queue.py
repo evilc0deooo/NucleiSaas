@@ -79,12 +79,15 @@ NucleiRedisQueue = RedisClient(Config.REDIS_DB)
 # zombie 扫描队列
 ZombieRedisQueue = RedisClient(Config.REDIS_DB2)
 
+# chkapi 扫描队列
+ChkAPIRedisQueue = RedisClient(Config.REDIS_DB3)
+
 
 def add_nuclei_target(queue_name, sites):
     """
     添加目标站点到队列
     """
-    logger.info(f'新建任务 -> 队列已有内目标站点数量 -> {NucleiRedisQueue.queue_length(queue_name)}')
+    logger.info(f'新建任务 -> Nuclei 队列已有内目标站点数量 -> {NucleiRedisQueue.queue_length(queue_name)}')
     queue_elements = NucleiRedisQueue.queue_data(queue_name)
     all_queue_list = []
     for element in queue_elements:
@@ -95,23 +98,26 @@ def add_nuclei_target(queue_name, sites):
         if site in all_queue_list:
             continue
         NucleiRedisQueue.enqueue(queue_name, site)
-    logger.info(f'新建任务成功 -> 队列内存在目标站点总数量 -> {NucleiRedisQueue.queue_length(queue_name)}')
+    logger.info(f'新建任务成功 -> Nuclei 队列内存在目标站点总数量 -> {NucleiRedisQueue.queue_length(queue_name)}')
 
 
-def batch_add_data(queue_name, file_name):
+def batch_add_data(collection, queue_name, file_name):
     """
     使用上传文件添加站点到队列
     """
-    logger.info(f'新建任务 -> 队列已有内目标数量 -> {NucleiRedisQueue.queue_length(queue_name)}')
+    logger.info(f'新建任务 -> 队列已有内目标数量 -> {collection.queue_length(queue_name)}')
 
     # 批量读取文件并写入 Redis
     for site in thirdparty.read_file_in_batches(file_name):
         try:
-            NucleiRedisQueue.enqueue_batch(queue_name, site)
+            collection.enqueue_batch(queue_name, site)
         except Exception as e:
             logger.error(f'新建任务失败 -> Exception -> {e}')
             break
-    logger.info(f'新建任务成功 -> 队列内存在目标总数量 -> {NucleiRedisQueue.queue_length(queue_name)}')
+    logger.info(f'新建任务成功 -> 队列内存在目标总数量 -> {collection.queue_length(queue_name)}')
+
+    if thirdparty.delete_file(file_name):
+        logger.info(f'删除上传后的批量扫描目标 {file_name} 文件')
 
 
 def get_nuclei_queue(project_id='ALL'):
@@ -173,7 +179,7 @@ def add_zombie_target(queue_name, sites):
     """
     添加 IP 目标到队列
     """
-    logger.info(f'新建任务 -> 队列已有内IP目标数量 -> {ZombieRedisQueue.queue_length(queue_name)}')
+    logger.info(f'新建任务 -> Zombie 队列已有内IP目标数量 -> {ZombieRedisQueue.queue_length(queue_name)}')
     queue_elements = ZombieRedisQueue.queue_data(queue_name)
     all_queue_list = []
     for element in queue_elements:
@@ -184,7 +190,7 @@ def add_zombie_target(queue_name, sites):
         if site in all_queue_list:
             continue
         ZombieRedisQueue.enqueue(queue_name, site)
-    logger.info(f'新建任务成功 -> 队列内存在 IP 目标总数量 -> {ZombieRedisQueue.queue_length(queue_name)}')
+    logger.info(f'新建任务成功 -> Zombie 队列内存在 IP 目标总数量 -> {ZombieRedisQueue.queue_length(queue_name)}')
 
 
 def get_zombie_queue(project_id='ALL'):
@@ -211,9 +217,9 @@ def del_zombie_target(project_id):
     if redis_key:
         del_sts = ZombieRedisQueue.del_collection(project_id)
         if del_sts:
-            logger.info(f'{project_id}集合队列删除成功')
+            logger.info(f'{project_id} 集合队列删除成功')
         else:
-            logger.error(f'{project_id}集合队列删除失败')
+            logger.error(f'{project_id} 集合队列删除失败')
 
         return del_sts
     else:
@@ -234,6 +240,75 @@ def del_zombie_all_targets():
             logger.error(f'{project_id} 集合队列删除失败')
 
     collection_data = ZombieRedisQueue.get_collection()
+    if len(collection_data) == 0:
+        logger.info(f'已删除所有 zombie 待扫描队列目标集合')
+
+    return len(collection_data)
+
+
+def add_chkapi_target(queue_name, sites):
+    """
+    添加目标站点到队列
+    """
+    logger.info(f'新建任务 -> ChkAPI 队列已有内目标站点数量 -> {ChkAPIRedisQueue.queue_length(queue_name)}')
+    queue_elements = ChkAPIRedisQueue.queue_data(queue_name)
+    all_queue_list = []
+    for element in queue_elements:
+        utf8_string = element.decode('utf-8')
+        all_queue_list.append(utf8_string)
+
+    for site in sites:
+        if site in all_queue_list:
+            continue
+        ChkAPIRedisQueue.enqueue(queue_name, site)
+    logger.info(f'新建任务成功 -> ChkAPI 队列内存在目标站点总数量 -> {ChkAPIRedisQueue.queue_length(queue_name)}')
+
+
+def get_chkapi_queue(project_id='ALL'):
+    """
+    获取 chkapi 安全扫描项目队列长度
+    """
+    if project_id == 'ALL':
+        count = 0
+        collection_data = ChkAPIRedisQueue.get_collection()
+        for queue_name in collection_data:
+            count += len(ChkAPIRedisQueue.queue_data(queue_name))
+        return count
+    else:
+        queue_elements = len(ChkAPIRedisQueue.queue_data(project_id))
+        return queue_elements
+
+
+def del_chkapi_target(project_id):
+    """
+    删除 chkapi 指定项目队列集合
+    """
+    redis_key = ChkAPIRedisQueue.exists_collection(project_id)
+    if redis_key:
+        del_sts = ChkAPIRedisQueue.del_collection(project_id)
+        if del_sts:
+            logger.info(f'{project_id} 集合队列删除成功')
+        else:
+            logger.error(f'{project_id} 集合队列删除失败')
+
+        return del_sts
+    else:
+        return True
+
+
+def del_chkapi_all_targets():
+    """
+    删除所有 chkapi 待扫描队列目标集合
+    """
+    collection_data = ChkAPIRedisQueue.get_collection()
+    for project_id in collection_data:
+        del_tars = del_chkapi_target(project_id)
+        if del_tars:
+            logger.info(f'{project_id} 集合队列删除成功')
+        else:
+            logger.error(f'{project_id} 集合队列删除失败')
+
+    collection_data = ChkAPIRedisQueue.get_collection()
     if len(collection_data) == 0:
         logger.info(f'已删除所有 zombie 待扫描队列目标集合')
 

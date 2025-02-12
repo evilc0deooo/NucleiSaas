@@ -55,11 +55,11 @@ class GenASN(object):
         # 禁止查询大陆 CIDR 段
         black_country_tlds = ['cn']
         if self.cy_tlds not in country_tlds:
-            logger.error(f'{self.cy_tlds} 错误的国家和地区顶级域名（ccTLD）.')
+            logger.error(f'{self.cy_tlds} 错误的国家和地区顶级域名（ccTLD）')
             return
 
         if self.cy_tlds in black_country_tlds:
-            logger.error(f'{self.cy_tlds} 在国家和地区顶级域名黑名单内.')
+            logger.error(f'{self.cy_tlds} 在国家和地区顶级域名黑名单内')
             return
 
         asn_command = ['asn', '-j', '-c', f'.{self.cy_tlds}']
@@ -71,7 +71,7 @@ class GenASN(object):
             ipv4_list = data['results'][0]['ipv4']
             self.ipv4_list = ipv4_list
         else:
-            logger.error(f'error executing command: {result.stderr}.')
+            logger.error(f'error executing command: {result.stderr}')
             return
 
     def cidr_write(self):
@@ -80,8 +80,8 @@ class GenASN(object):
         """
         self.count = 0
         if not self.ipv4_list:
-            logger.warning(f'本次 {self.cy_tlds} 生成 CDIR 块数量 -> {self.count}.')
-            logger.error(f'检查代理网络连接.')
+            logger.warning(f'本次 {self.cy_tlds} 生成 CDIR 块数量 -> {self.count}')
+            logger.error(f'检查代理网络连接')
             return
 
         with open(self.asn_gen_output_path, 'w') as f:
@@ -92,7 +92,7 @@ class GenASN(object):
                 f.write(ipv4 + '\n')
                 self.count += 1
 
-        logger.info(f'本次 {self.cy_tlds} 生成 CDIR 块数量 -> {self.count}.')
+        logger.info(f'本次 {self.cy_tlds} 生成 CDIR 块数量 -> {self.count}')
 
     def run(self):
         self.gen_country_ipv4()

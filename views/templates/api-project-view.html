@@ -7,11 +7,11 @@
         <div class="container">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0"><small> 项目视图 </small></h1>
+                    <h1 class="m-0"><small> 资产收集项目视图 </small></h1>
                 </div><!-- /.col -->
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item active">Project View</li>
+                        <li class="breadcrumb-item active">Assets Collection Project View</li>
                     </ol>
                 </div><!-- /.col -->
             </div><!-- /.row -->
@@ -24,32 +24,29 @@
             <!-- card -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Project View</h3>
+                    <h3 class="card-title">Assets Collection Project View</h3>
                 </div>
                 <!-- /.card-header -->
                 <div class="card-body">
                     <div>
                         <form id="searchForm">
                             <div class="form-group">搜索</div>
-                            <label><input type="search" id="project_id" class="form-control form-control"
-                                          placeholder="项目ID"></label>
-                            <label><input type="search" id="project_name" class="form-control form-control"
-                                          placeholder="项目名称"></label>
-                            <label><input type="search" id="project_description" class="form-control form-control"
-                                          placeholder="项目描述"></label><br>
-                            <label><input type="submit" class="btn btn-default"></label><br>
+                            <label><input type="search" id="project_id" class="form-control form-control" placeholder="项目 ID"></label>
+                            <label><input type="search" id="project_name" class="form-control form-control" placeholder="项目名称"></label>
+                            <label><input type="search" id="project_description" class="form-control form-control" placeholder="项目描述"></label><br>
+                            <label><input type="submit" class="btn btn-default"></label>
+                            <br>
                         </form>
                     </div>
                     <br>
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center;">
                         <tr>
-                            <th>ID</th>
                             <th>项目名称</th>
-                            <th>Description</th>
+                            <th>项目描述</th>
+                            <th>创建人</th>
                             <th>创建时间</th>
-                            <th>Project ID</th>
-                            <th>Action</th>
+                            <th>操作选项</th>
                         </tr>
                         </thead>
                         <tbody style="white-space: nowrap; text-align: center;">
@@ -84,7 +81,7 @@
             pagingType: 'full_numbers', //显示首页尾页
 
             ajax: {
-                url: '/Ajax/ProjectView',
+                url: '/Ajax/AssetsProjectView',
                 type: 'GET',
                 data: function (d) {
                     const projectId = $('#project_id').val();
@@ -100,7 +97,6 @@
             },
             columns: [
                 // 对应 API 返回的数据字段
-                {data: 'id', visible: false},
                 {
                     // 对应返回数据中的属性，并通过 render 函数自定义显示内容
                     data: null,
@@ -111,22 +107,22 @@
                     }
                 },
                 {data: 'project_description'},
+                {data: 'account'},
                 {data: 'create_time'},
-                {data: 'project_id', visible: false}, // 隐藏项目ID列，如果不需要显示
                 {
                     // 对应返回数据中的属性，并通过 render 函数自定义显示内容
                     data: null,
                     render: function (data, type, row) {
                         let html = '';
-                        html += '<a href="/TaskManage/' + row.project_id + '" class="btn btn-sm btn-default">详情</a> '
+                        html += '<a href="/TaskManage/' + row.project_id + '" class="btn btn-sm btn-default">项目详情</a> '
                         html += '<a href="/Download/Project/Domain/' + row.project_id + '" class="btn btn-sm btn-default">导出域名</a> '
                         html += '<a href="/Download/Project/Site/' + row.project_id + '" class="btn btn-sm btn-default">导出站点</a> '
                         html += '<a href="/Download/Project/FileLeak/' + row.project_id + '" class="btn btn-sm btn-default">导出文件泄露</a> '
-                        html += '<a href="/DelAssetsProject/' + row.project_id + '" class="btn btn-sm btn-danger">删除</a>'
+                        html += '<a href="/AssetsProject/LinkNucleiTask/' + row.project_id + '" class="btn btn-sm btn-default">推送至 Nuclei 项目</a> '
+                        html += '<a href="/DelAssetsProject/' + row.project_id + '" class="btn btn-sm btn-danger">删除项目</a>'
                         return html
-
                     }
-                },
+                }
                 // Add more columns as needed
             ],
             "language": //把文字变为中文

@@ -2,6 +2,7 @@
 
 import hashlib
 import os
+import shutil
 import pathlib
 import platform
 import random
@@ -95,7 +96,7 @@ def check_output(cmd, **kwargs):
         timeout = kwargs.pop('timeout')
 
     if 'stdout' in kwargs:
-        raise ValueError('stdout argument not allowed, it will be overridden.')
+        raise ValueError('stdout argument not allowed, it will be overridden')
 
     output = subprocess.run(shlex.split(cmd), stdout=subprocess.PIPE, timeout=timeout, check=False, **kwargs).stdout
     return output
@@ -154,15 +155,56 @@ def read_file_in_batches(file_path, batch_size=10000):
 
 def get_local_ip():
     """
-    获取机器 IP
+    获取机器 IP 地址
     """
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # 连接到一个公共的 DNS 服务器地址（这里用 Google 的公共 DNS）
         s.connect(("8.8.8.8", 80))
-        # 获取本地 IP 地址
         local_ip = s.getsockname()[0]
         s.close()
         return local_ip
     except OSError:
         return None
+
+
+def delete_directory_contents(directory_path, keep_root=False):
+    """
+    删除指定目录下的所有文件和子目录
+    :param directory_path: 要操作的目录路径
+    :param keep_root: 是否保留根目录，默认为 False
+    """
+    try:
+        if os.path.exists(directory_path) and os.path.isdir(directory_path):
+            # 遍历目录下的所有文件和子目录
+            for item in os.listdir(directory_path):
+                item_path = os.path.join(directory_path, item)
+                if os.path.isfile(item_path):
+                    os.remove(item_path)
+                elif os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+            if not keep_root:
+                # 如果不保留根目录，删除根目录
+                shutil.rmtree(directory_path)
+
+            return True
+
+    except Exception as e:
+        print(f'删除过程中出现错误 {e}')
+        return False
+
+
+def delete_file(file_path):
+    """
+    删除指定文件
+    """
+    try:
+        os.remove(file_path)
+        print(f'文件 {file_path} 已成功删除')
+        return True
+    except FileNotFoundError:
+        print(f'文件 {file_path} 未找到')
+    except PermissionError:
+        print(f'没有权限删除文件 {file_path}')
+    except Exception as e:
+        print(f'删除文件 {file_path} 出现异常 {e}')

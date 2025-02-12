@@ -32,15 +32,12 @@
                         {% include 'api-nav-link.html' %}
                         <form id="searchForm">
                             <div class="form-group">搜索</div>
-                            <label><input type="search" id="cidr_ip" class="form-control form-control"
-                                          placeholder="C 段"></label>
-                            <label><input type="search" id="ip_count" class="form-control form-control"
-                                          placeholder="IP 个数"></label>
-                            <label><input type="search" id="domain_count" class="form-control form-control"
-                                          placeholder="解析到该 C 段域名个数"></label>
-                            <label><input type="search" id="task_id" class="form-control form-control"
-                                          style="display: none;" value="{% if task_id %}{{ task_id }}{% endif %}"
-                                          placeholder="任务ID"></label>
+                            <label><input type="search" id="cidr_ip" class="form-control form-control" placeholder="C 段"></label>
+                            <label><input type="search" id="ip_count" class="form-control form-control" placeholder="IP 个数"></label>
+                            <label><input type="search" id="domain_count" class="form-control form-control" placeholder="解析到该 C 段域名个数"></label>
+                            <label>
+                                <input type="search" id="task_id" class="form-control form-control" style="display: none;" value="{% if task_id %}{{ task_id }}{% endif %}" placeholder="任务 ID">
+                            </label>
                             <br>
                             <label><input type="submit" class="btn btn-default"></label>
                             <br>
@@ -50,13 +47,11 @@
                     <table id="data-table" class="table table-bordered table-striped">
                         <thead style="white-space: nowrap; text-align: center;">
                         <tr>
-                            <th>任务ID</th>
                             <th>C 段</th>
                             <th>IP 数量统计</th>
                             <th>IP 列表</th>
                             <th>域名数量统计</th>
                             <th>域名列表</th>
-                            <th>Action</th>
                         </tr>
                         </thead>
                         <tbody style="white-space: nowrap; text-align: center;">
@@ -107,8 +102,6 @@
                 },
             },
             columns: [
-                // 对应 API 返回的数据字段
-                {data: 'task_id', visible: false},
                 // {data: 'cidr_ip'},
                 {
                     data: 'cidr_ip',
@@ -176,17 +169,7 @@
 
                         return html;
                     }
-                },
-                {
-                    // 对应返回数据中的属性，并通过 render 函数自定义显示内容
-                    data: null,
-                    render: function (data, type, row) {
-                        let html = '';
-                        html += '<a href="#' + row.task_id + '" class="btn btn-sm btn-danger">删除</a> '
-                        return html
-
-                    }, visible: false
-                },
+                }
                 // Add more columns as needed
             ],
             "language": //把文字变为中文

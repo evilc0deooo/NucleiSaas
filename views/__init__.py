@@ -123,14 +123,15 @@ def login_check(f):
 
     @wraps(f)
     def wrapper(*args, **kwargs):
+
         if 'login' in session:
             if session['login'] == '1':
                 return f(*args, **kwargs)
             else:
-                flash('No permission to access.')
+                flash('No permission to access')
                 return redirect(url_for('login'))
         else:
-            flash('No permission to access.')
+            flash('No permission to access')
             return redirect(url_for('login'))
 
     return wrapper
@@ -140,7 +141,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(64)  # secret key 密钥
 app.permanent_session_lifetime = timedelta(hours=3)  # session 过期时间
 app.debug = False  # 关闭 Debug
-app.config['ALLOWED_EXTENSIONS'] = {'txt', 'png', 'jpg', 'jpeg', 'gif'}  # 文件上传白名单
+app.config['ALLOWED_EXTENSIONS'] = {'txt'}  # 文件上传白名单
 
 
 def allowed_file(filename):
