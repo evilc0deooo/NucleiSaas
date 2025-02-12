@@ -63,17 +63,38 @@ sudo chown root:root /run/user/0
 chromedriver --version
 
 python3 -m venv /opt/py_env
+
 # source /opt/py_env/bin/activate
-# python -m pip uninstall urllib3 chardet
-# python -m pip install urllib3 chardet
-# python -m pip install urllib3 chardet beautifulsoup4 tldextract selenium pyyaml openpyxl
+/opt/py_env/bin/python -m pip uninstall urllib3 chardet
+/opt/py_env/bin/python -m pip install urllib3 chardet
+/opt/py_env/bin/python -m pip install urllib3 chardet beautifulsoup4 tldextract selenium pyyaml openpyxl
+
+# ----------------------------------------------------------
 
 # ~/NucleiSaas
+git clone https://github.com/evilc0deooo/NucleiPlatform.git /root/NucleiPlatform
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+/opt/py_env/bin/python -m pip install -r /root/NucleiPlatform/requirements.txt
+/opt/py_env/bin/python -m pip uninstall pymongo
+/opt/py_env/bin/python -m pip install pymongo==4.7.3
+
 # python -m pip install -r requirements.txt
 # python -m pip uninstall pymongo
 # python -m pip install pymongo==4.7.3
-# screen python agent.py
+# python agent.py
+
+# ----------------------------------------------------------
 
 # ~/AssetsDetectAPI
+git clone https://github.com/evilc0deooo/AssetsDetectAPI.git /root/AssetsDetectAPI
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+/opt/py_env/bin/python -m pip install -r /root/AssetsDetectAPI/requirements.txt
+
 # python -m pip install -r requirements.txt
-# screen celery -A celerytask.celery worker -l debug -Q assets_task -n celery_task -c 2 -O fair
+# celery -A celerytask.celery worker -l debug -Q assets_task -n celery_task -c 2 -O fair

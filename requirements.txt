@@ -70,5 +70,8 @@ Requests
 selenium
 tldextract
 openpyxl
+pyyaml
+chardet
+urllib3
 bson==0.5.10
 pymongo==4.7.3
