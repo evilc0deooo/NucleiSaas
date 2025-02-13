@@ -671,7 +671,7 @@ def delete_chkapi_project(project_id):
         if not project_data:
             logger.error(f'{project_id} ChkAPI 项目不存在')
             return False
-        conn_db('zombie_project').delete_one({'_id': ObjectId(project_id)})
+        conn_db('chkapi_project').delete_one({'_id': ObjectId(project_id)})
         logger.info(f'删除 {project_id} ChkAPI 项目成功')
         return True
     except Exception as e:
