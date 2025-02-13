@@ -896,7 +896,7 @@ def del_chkapi_project(project_id):
         del_s = delete_chkapi_project(project_id)
         if del_s:
             flash(f'{project_id} ChkAPI 项目已删除')
-            del_sts = del_zombie_target(project_id)
+            del_sts = del_chkapi_target(project_id)
             if del_sts:
                 flash(f'{project_id} ChkAPI 扫描队列已删除')
             else:
