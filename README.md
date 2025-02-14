@@ -1,4 +1,4 @@
-# NucleiSaas Platform
+# NucleiSaas 阉割版
 
 NucleiSaaS 化服务集成资产扫描系统可进行联动。
 
