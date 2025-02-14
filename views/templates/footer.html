@@ -61,3 +61,13 @@
         {% endfor %}
     {% endif %}
 {% endwith %}
+
+{% if err_msg == 1 %}
+<script>
+    // 设置延时时间 1.1 秒
+    const delayTime = 1100;
+    setTimeout(function () {
+        history.back();
+    }, delayTime);
+</script>
+{% endif %}

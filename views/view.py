@@ -106,16 +106,16 @@ def new_nuclei_task():
         sites = request.form.get('sites')
         if not project_name:
             flash('请输入项目名称')
-            return redirect(url_for('new_nuclei_task'))
+            return render_template('new-task.html', err_msg=1)
 
         # 禁止目录穿越
         if not nuclei_template_yaml or './' in nuclei_template_yaml or '..' in nuclei_template_yaml:
             flash('请输入指定要运行的YAML模板名称或者模板目录（以逗号分隔或目录形式）')
-            return redirect(url_for('new_nuclei_task'))
+            return render_template('new-task.html', err_msg=1)
 
         if not severity_critical and not severity_high and not severity_medium and not severity_low and not severity_info:
             flash('根据漏洞严重程度来过滤运行的模板不能为空')
-            return redirect(url_for('new_nuclei_task'))
+            return render_template('new-task.html', err_msg=1)
 
         # 使用列表推导式过滤掉空字符串
         nuclei_severity_list = [s for s in [severity_critical, severity_high, severity_medium, severity_low, severity_info] if s.strip()]
@@ -123,7 +123,7 @@ def new_nuclei_task():
         nuclei_severity = ','.join(nuclei_severity_list)
         if not sites:
             flash('请输入扫描目标')
-            return redirect(url_for('new_nuclei_task'))
+            return render_template('new-task.html', err_msg=1)
 
         sites_list = thirdparty.target2list(sites)
         create_nuclei_project(project_name, sites_list, project_description, nuclei_template_yaml, nuclei_template_tags, nuclei_severity, nuclei_proxy, account=session['account'], batch=0)
@@ -152,15 +152,15 @@ def batch_nuclei_task():
 
         if not project_name:
             flash('请输入项目名称')
-            return redirect(url_for('batch_nuclei_task'))
+            return render_template('new-batch-task.html', err_msg=1)
 
         if not nuclei_template_yaml or './' in nuclei_template_yaml or '..' in nuclei_template_yaml:
             flash('请输入指定要运行的YAML模板名称或者模板目录（以逗号分隔或目录形式）')
-            return redirect(url_for('batch_nuclei_task'))
+            return render_template('new-batch-task.html', err_msg=1)
 
         if not severity_critical and not severity_high and not severity_medium and not severity_low and not severity_info:
             flash('根据漏洞严重程度来过滤运行的模板不能为空')
-            return redirect(url_for('batch_nuclei_task'))
+            return render_template('new-batch-task.html', err_msg=1)
 
         # 使用列表推导式过滤掉空字符串
         nuclei_severity_list = [s for s in [severity_critical, severity_high, severity_medium, severity_low, severity_info] if s.strip()]
@@ -169,12 +169,12 @@ def batch_nuclei_task():
 
         if 'file' not in request.files:
             flash('请上传目标文件（仅支持 txt 文件）')
-            return redirect(url_for('batch_nuclei_task'))
+            return render_template('new-batch-task.html', err_msg=1)
 
         file = request.files['file']
         if file.filename == '':
             flash('请上传目标文件（仅支持 txt 文件）')
-            return redirect(url_for('batch_nuclei_task'))
+            return render_template('new-batch-task.html', err_msg=1)
 
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -186,7 +186,7 @@ def batch_nuclei_task():
 
         else:
             flash('请上传目标文件（仅支持 txt 文件）')
-            return redirect(url_for('batch_nuclei_task'))
+            return render_template('new-batch-task.html', err_msg=1)
 
 
 @app.route('/VulRet/<project_id>', methods=['GET'])
@@ -245,11 +245,11 @@ def new_zombie_task():
         ips_list = request.form.get('ips_list')
         if not project_name:
             flash('请输入项目名称')
-            return redirect(url_for('new_zombie_task'))
+            return render_template('new-zombie-task.html', err_msg=1)
 
         if not ips_list:
             flash('请输入扫描目标')
-            return redirect(url_for('new_zombie_task'))
+            return render_template('new-zombie-task.html', err_msg=1)
 
         ips_list = thirdparty.target2list(ips_list)
         user_dict = thirdparty.dict2list(user_dict)
@@ -275,20 +275,20 @@ def batch_zombie_task():
         pass_dict = request.form.get('pass_dict')
         if not project_name:
             flash('请输入项目名称')
-            return redirect(url_for('batch_zombie_task'))
+            return render_template('new-zombie-batch-task.html', err_msg=1)
 
         if not service_name:
             flash('请选择爆破的服务名称')
-            return redirect(url_for('batch_zombie_task'))
+            return render_template('new-zombie-batch-task.html', err_msg=1)
 
         if 'file' not in request.files:
             flash('请上传 IP 目标文件（仅支持 txt 文件）')
-            return redirect(url_for('batch_zombie_task'))
+            return render_template('new-zombie-batch-task.html', err_msg=1)
 
         file = request.files['file']
         if file.filename == '':
             flash('请上传 IP 目标文件（仅支持 txt 文件）')
-            return redirect(url_for('batch_zombie_task'))
+            return render_template('new-zombie-batch-task.html', err_msg=1)
 
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -304,7 +304,7 @@ def batch_zombie_task():
 
         else:
             flash('请上传 IP 目标文件（仅支持 txt 文件）')
-            return redirect(url_for('batch_zombie_task'))
+            return render_template('new-zombie-batch-task.html', err_msg=1)
 
 
 @app.route('/ZombieRet/<project_id>', methods=['GET'])
@@ -364,24 +364,26 @@ def new_chkapi_task():
         sites = request.form.get('sites')
         if not project_name:
             flash('请输入项目名称')
-            return redirect(url_for('new_chkapi_task'))
+            return render_template('new-chkapi-task.html', err_msg=1)
 
         if not sites:
             flash('请输入扫描目标')
-            return redirect(url_for('new_chkapi_task'))
+            return render_template('new-chkapi-task.html', err_msg=1)
 
         if not cookies:
             cookies = ''
 
         if not chrome:
             flash('请选择是否开启 chromedriver 扫描')
-            return redirect(url_for('new_chkapi_task'))
+            return render_template('new-chkapi-task.html', err_msg=1)
 
         if not attack_type:
             flash('请选择是否 ATTACK TYPE 选项扫描')
+            return render_template('new-chkapi-task.html', err_msg=1)
 
         if not no_api_scan:
             flash('请选择是否扫描 API 接口漏洞')
+            return render_template('new-chkapi-task.html', err_msg=1)
 
         url_list = thirdparty.target2list(sites)
 
@@ -406,29 +408,31 @@ def batch_chkapi_task():
         no_api_scan = request.form.get('no_api_scan')
         if not project_name:
             flash('请输入项目名称')
-            return redirect(url_for('batch_chkapi_task'))
+            return render_template('new-chkapi-batch-task.html', err_msg=1)
 
         if not cookies:
             cookies = ''
 
         if not chrome:
             flash('请选择是否开启 chromedriver 扫描')
-            return redirect(url_for('batch_chkapi_task'))
+            return render_template('new-chkapi-batch-task.html', err_msg=1)
 
         if not attack_type:
-            flash('请选择是否 ATTACK TYPE 选项扫描')
+            flash('请选择是否 ATTACK TYPE 选项')
+            return render_template('new-chkapi-batch-task.html', err_msg=1)
 
         if not no_api_scan:
             flash('请选择是否扫描 API 接口漏洞')
+            return render_template('new-chkapi-batch-task.html', err_msg=1)
 
         if 'file' not in request.files:
             flash('请上传目标文件（仅支持 txt 文件）')
-            return redirect(url_for('batch_chkapi_task'))
+            return render_template('new-chkapi-batch-task.html', err_msg=1)
 
         file = request.files['file']
         if file.filename == '':
             flash('请上传目标文件（仅支持 txt 文件）')
-            return redirect(url_for('batch_chkapi_task'))
+            return render_template('new-chkapi-batch-task.html', err_msg=1)
 
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -441,7 +445,7 @@ def batch_chkapi_task():
 
         else:
             flash('请上传IP目标文件（仅支持 txt 文件）')
-            return redirect(url_for('batch_chkapi_task'))
+            return render_template('new-chkapi-batch-task.html', err_msg=1)
 
 
 @app.route('/ChkAPIRet/<project_id>', methods=['GET'])
@@ -478,7 +482,7 @@ def query_queue(project_id):
     if request.method == 'GET':
         count = get_nuclei_queue(project_id)
         flash(f'{project_id} 队列待扫描目标：{count}')
-        return render_template('nuclei-ret.html', project_id=project_id)
+        return render_template('nuclei-ret.html', project_id=project_id, err_msg=1)
 
 
 @app.route('/CheckZombieQueue/<project_id>', methods=['GET'])
@@ -491,7 +495,7 @@ def query_zombie_queue(project_id):
     if request.method == 'GET':
         count = get_zombie_queue(project_id)
         flash(f'{project_id} 队列待扫描目标：{count}')
-        return render_template('zombie-ret.html', project_id=project_id)
+        return render_template('zombie-ret.html', project_id=project_id, err_msg=1)
 
 
 @app.route('/CheckChkAPIQueue/<project_id>', methods=['GET'])
@@ -504,7 +508,7 @@ def query_chkapi_queue(project_id):
     if request.method == 'GET':
         count = get_chkapi_queue(project_id)
         flash(f'{project_id} 队列待扫描目标：{count}')
-        return render_template('chkapi-hae-ret.html', project_id=project_id)
+        return render_template('chkapi-hae-ret.html', project_id=project_id, err_msg=1)
 
 
 @app.route('/Download/VulRet/<project_id>', methods=['GET'])
@@ -975,11 +979,11 @@ def api_newtask():
         only_file_leak = request.form.get('only_file_leak')
         if not project_name:
             flash('请输入项目名称')
-            return redirect(url_for('api_newtask'))
+            return render_template('api-new-task.html', err_msg=1)
 
         if not target:
             flash('请输入扫描目标')
-            return redirect(url_for('api_newtask'))
+            return render_template('api-new-task.html', err_msg=1)
 
         params = {
             'project_name': project_name,
@@ -1014,6 +1018,8 @@ def api_newtask():
             flash(f'{message}')
         else:
             flash(f'资产收集 API 接口错误 {message}')
+            return render_template('api-new-task.html', err_msg=1)
+
         return redirect(url_for('get_assets_project'))
 
 

@@ -102,7 +102,7 @@
                     data: null,
                     render: function (data, type, row) {
                         let html = '';
-                        html += '<a href="/TaskManage/' + row.project_id + '">' + row.project_name + '</a>';
+                        html += '<a href="/TaskManage/' + row.project_id + '" target="_blank">' + row.project_name + '</a>';
                         return html
                     }
                 },
@@ -114,12 +114,12 @@
                     data: null,
                     render: function (data, type, row) {
                         let html = '';
-                        html += '<a href="/TaskManage/' + row.project_id + '" class="btn btn-sm btn-default">项目详情</a> '
-                        html += '<a href="/Download/Project/Domain/' + row.project_id + '" class="btn btn-sm btn-default">导出域名</a> '
-                        html += '<a href="/Download/Project/Site/' + row.project_id + '" class="btn btn-sm btn-default">导出站点</a> '
-                        html += '<a href="/Download/Project/FileLeak/' + row.project_id + '" class="btn btn-sm btn-default">导出文件泄露</a> '
-                        html += '<a href="/AssetsProject/LinkNucleiTask/' + row.project_id + '" class="btn btn-sm btn-default">推送至 Nuclei 项目</a> '
-                        html += '<a href="/DelAssetsProject/' + row.project_id + '" class="btn btn-sm btn-danger">删除项目</a>'
+                        html += '<a href="/TaskManage/' + row.project_id + '" class="btn btn-sm btn-default" target="_blank">项目详情</a> '
+                        html += '<a href="/Download/Project/Domain/' + row.project_id + '" class="btn btn-sm btn-default" target="_blank">导出域名</a> '
+                        html += '<a href="/Download/Project/Site/' + row.project_id + '" class="btn btn-sm btn-default" target="_blank">导出站点</a> '
+                        html += '<a href="/Download/Project/FileLeak/' + row.project_id + '" class="btn btn-sm btn-default" target="_blank">导出文件泄露</a> '
+                        html += '<a href="/AssetsProject/LinkNucleiTask/' + row.project_id + '" class="btn btn-sm btn-default" target="_blank">推送至 Nuclei 项目</a> '
+                        html += '<a href="/DelAssetsProject/' + row.project_id + '" class="btn btn-sm btn-danger" target="_blank">删除项目</a>'
                         return html
                     }
                 }

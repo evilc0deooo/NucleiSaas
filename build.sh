@@ -44,7 +44,7 @@ echo 1 > /proc/sys/vm/overcommit_memory
 sudo apt-get -y update
 
 # 安装相关依赖
-sudo apt -y install python3-pip python3.12-venv gcc nmap
+sudo apt -y install python3-pip python3-venv gcc nmap
 sudo apt -y --fix-broken install
 sudo apt -y install libappindicator3-1 libasound2t64 libatk-bridge2.0-0 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libgcc1 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 lsb-release wget xdg-utils
 sudo apt-get -y install fonts-liberation libu2f-udev
@@ -98,3 +98,7 @@ fi
 
 # python -m pip install -r requirements.txt
 # celery -A celerytask.celery worker -l debug -Q assets_task -n celery_task -c 2 -O fair
+
+# 打包相关命令
+# 7z a -tzip -p'YourPassword' AssetsDetectAPI.zip . -xr!'__pycache__' -xr!'.idea' -xr!'.DS_Store' -xr!'.git' -xr!'venv' -xr!'debug.log'
+# 7z a -tzip -p'YourPassword' NucleiSaas.zip . -xr!'__pycache__' -xr!'.idea' -xr!'.DS_Store' -xr!'.git' -xr!'venv' -xr!'debug.log'

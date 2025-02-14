@@ -115,7 +115,7 @@
                     data: null,
                     render: function (data, type, row) {
                         let html = '';
-                        html += '<a href="/Sites/' + row.task_id + '">' + row.target + '</a>';
+                        html += '<a href="/Sites/' + row.task_id + '" target="_blank">' + row.target + '</a>';
                         return html
                     }
                 },
@@ -185,9 +185,9 @@
                     data: null,
                     render: function (data, type, row) {
                         let html = '';
-                        html += '<a href="/Sites/' + row.task_id + '" class="btn btn-sm btn-default">详情</a> '
-                        html += '<a href="/StopTask/' + row.task_id + '" class="btn btn-sm btn-default">停止</a> '
-                        html += '<a href="/DelTask/' + row.task_id + '" class="btn btn-sm btn-danger">删除</a>'
+                        html += '<a href="/Sites/' + row.task_id + '" class="btn btn-sm btn-default" target="_blank">详情</a> '
+                        html += '<a href="/StopTask/' + row.task_id + '" class="btn btn-sm btn-default" target="_blank">停止</a> '
+                        html += '<a href="/DelTask/' + row.task_id + '" class="btn btn-sm btn-danger" target="_blank">删除</a>'
                         return html
 
                     }
