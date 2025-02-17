@@ -56,7 +56,6 @@
                         <tr>
                             <th>图标</th>
                             <th>站点</th>
-                            <th>域名</th>
                             <th>标题</th>
                             <th>标签</th>
                             <th>状态码</th>
@@ -189,19 +188,6 @@
                     }
                 },
                 {data: 'status'},
-                {
-                    data: null,
-                    render: function (data, type, row) {
-                        let headersArray = row.headers.split('\n');
-
-                        let html = '';
-                        headersArray.forEach(function (header) {
-                            html += '<div>' + header + '</div>';
-                        });
-
-                        return html;
-                    }, visible: false
-                },
                 {
                     data: 'finger',
                     render: function (data, type, row) {
