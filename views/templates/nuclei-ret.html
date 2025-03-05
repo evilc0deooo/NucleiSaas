@@ -46,6 +46,7 @@
                             <th data-name="vuln_severity">安全等级</th>
                             <th data-name="template_id">模版ID</th>
                             <th data-name="vuln_url">漏洞地址</th>
+                            <th data-name="extracted-results">提取结果</th>
                             <th data-name="date">时间</th>
                         </tr>
                         </thead>
@@ -165,17 +166,31 @@
                         }
                     }
                 },
+                // {data: 'extracted-results'},
+                {
+                    data: 'extracted-results',
+                    render: function (data) {
+                        let html = '';
+                        if (data !== "None"){
+                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
+                            return html;
+                        }else {
+                            html += '<p><span class="badge badge-light">-</span></p>'
+                            return html;
+                        }
+                    }
+                },
                 // {data: 'date'},
                 {
                     data: 'date',
                     render: function (data) {
                         let html = '';
                         if (data && data.length > 0) {
-                            html += '<p><span class="badge badge-light">' + data + '</span></p>'
+                            html += '<p><span class="badge badge-dark">' + data + '</span></p>'
                             return html;
                         }
                     }
-                },
+                }
             ],
             "language": //把文字变为中文
                 {

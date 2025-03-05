@@ -156,6 +156,7 @@ def get_nuclei_data(draw, start, length, project_id='ALL'):
             'vuln_url': item['vuln_url'],
             'curl_command': item['curl_command'],
             'target': item['target'],
+            'extracted-results': str(item.get('extracted-results')),
             'date': item['date']
         } for item in data]
     }
@@ -274,7 +275,7 @@ def download_nuclei_data(project_id='ALL'):
                           f'--authenticationDatabase={Config.MONGO_AUTH_DB}',
                           f'--db {Config.MONGO_DB}',
                           '--collection nuclei_ret',
-                          '--type=csv --fields project_id,template_id,target,vuln_url,vuln_name,vuln_severity,date',
+                          '--type=csv --fields project_id,template_id,target,vuln_url,vuln_name,vuln_severity,extracted-results,date',
                           f'--out {filename}']
     else:
         cmd_parameters = [f'{mongoexport_bin}',
@@ -286,7 +287,7 @@ def download_nuclei_data(project_id='ALL'):
                           f'--db {Config.MONGO_DB}',
                           '--collection nuclei_ret',
                           "--query='{{\"project_id\": \"{_project_id}\"}}'".format(_project_id=project_id),
-                          '--type=csv --fields project_id,template_id,target,vuln_url,vuln_name,vuln_severity,date',
+                          '--type=csv --fields project_id,template_id,target,vuln_url,vuln_name,vuln_severity,extracted-results,date',
                           f'--out {filename}']
 
     logger.info(' '.join(cmd_parameters))

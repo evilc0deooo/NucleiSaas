@@ -30,7 +30,7 @@ class NucleiScan(object):
         self.proxy = proxy.rstrip('/')  # Nuclei 扫描代理
         self.nuclei_rate = 500  # Nuclei 并发线程
         self.poc_template_list = []
-        self.exclude_id = 'open-proxy-internal,open-proxy-portscan'  # 排除指定 id 的模板（逗号分隔，文件）
+        self.exclude_id = 'open-proxy-internal,open-proxy-portscan,CVE-2023-24044,CVE-2019-11248'  # 排除指定 id 的模板（逗号分隔，文件）
         os.chmod(self.nuclei_bin, 0o777)
 
     def find_file_recursively(self, poc_templates, search_dirs):
@@ -139,6 +139,7 @@ class NucleiScan(object):
                     'vuln_url': data.get('matched-at', ''),
                     'curl_command': data.get('curl-command', ''),
                     'target': data.get('host', ''),
+                    'extracted-results': data.get('extracted-results', '-'),
                     'date': thirdparty.curr_date()
                 }
 
@@ -183,7 +184,7 @@ def run(project_id, _sites, nuclei_template_yaml, tags, severity, proxy):
 
 
 if __name__ == '__main__':
-    sites = ['https://www.baidu.com/']
+    sites = ['127.0.0.21']
 
-    run('172efc14296ae5f5be939af1', sites, 'robots-txt-endpoint.yaml', '', 'info,low,medium,high', '')
-    run('172efc14296ae5f5be939af1', sites, 'nuclei-templates/http/miscellaneous/robots-txt-endpoint.yaml', '', 'info,low,medium,high', '')
+    run('172efc14296ae5f5be939af1', sites, 'ssl-dns-names.yaml', '', 'info,low,medium,high', 'socks5://127.0.0.1:7890')
+    # run('172efc14296ae5f5be939af1', sites, 'nuclei-templates/http/miscellaneous/robots-txt-endpoint.yaml', '', 'info,low,medium,high', '')

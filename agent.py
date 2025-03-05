@@ -2,7 +2,6 @@
 
 import time
 import platform
-
 import thirdparty
 from services.chkapi import run as ChkAPIScan
 from services.nuclei import run as NucleiScan
@@ -79,7 +78,7 @@ def agent_monitor():
 
                 # 防御性编程, 防止列表元素过大造成内存溢出等问题
                 nuclei_sites_list.clear()
-
+                
         else:
             # 如果 nuclei 扫描队列处于空闲状态则扫描 zombie 目标队列
             print(f'实时监控 Nuclei 当前无待扫描队列')
@@ -124,6 +123,7 @@ def agent_monitor():
 
                     # 防御性编程, 防止列表元素过大造成内存溢出等问题
                     zombie_ips_list.clear()
+
             else:
                 # 如果 nuclei 和 zombie 扫描队列处于空闲状态则进入 chkapi 安全扫描
                 print(f'实时监控 zombie 当前无待扫描队列')
@@ -169,6 +169,7 @@ def agent_monitor():
 
                         # 防御性编程, 防止列表元素过大造成内存溢出等问题
                         chkapi_sites_list.clear()
+
 
                 else:
                     # nuclei, zombie, chkapi 都没有需要扫描的队列等待继续扫描
