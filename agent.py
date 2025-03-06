@@ -78,7 +78,7 @@ def agent_monitor():
 
                 # 防御性编程, 防止列表元素过大造成内存溢出等问题
                 nuclei_sites_list.clear()
-                
+
         else:
             # 如果 nuclei 扫描队列处于空闲状态则扫描 zombie 目标队列
             print(f'实时监控 Nuclei 当前无待扫描队列')
