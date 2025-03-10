@@ -184,3 +184,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('Scan Agent 程序被中断')
         logger.error('Scan Agent 程序被中断')
+    except Exception as e:
+        logger.info(f'Scan Agent 程序异常错误 {e}')
