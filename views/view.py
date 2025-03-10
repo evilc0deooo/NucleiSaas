@@ -1224,7 +1224,8 @@ def stop_task(task_id):
             flash(f'{task_id} {message}')
         else:
             flash(f'资产收集 API 接口错误 {message}')
-        return redirect(url_for('get_task'))
+
+        return render_template('api-task.html', err_msg=1)
 
 
 @app.route('/DelTask/<task_id>', methods=['GET'])
@@ -1256,7 +1257,7 @@ def del_task(task_id):
             flash(f'{task_id} {message}')
         else:
             flash(f'资产收集 API 接口错误 {message}')
-        return redirect(url_for('get_task'))
+        return render_template('api-task.html', err_msg=1)
 
 
 @app.route('/DelTask/ErrorStatus', methods=['GET'])
@@ -1293,7 +1294,7 @@ def del_error_task():
             flash(message)
         else:
             flash(f'资产收集 API 接口错误 {message}')
-        return redirect(url_for('get_task'))
+        return render_template('api-task.html', err_msg=1)
 
 
 @app.route('/Sites', methods=['GET'])
