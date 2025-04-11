@@ -3,7 +3,7 @@ id: apple-cups-exposure
 info:
   name: Apple CUPS Sources - Exposure
   author: DhiyaneshDK
-  severity: high
+  severity: unknown
   description: |
     Apple CUPS Sources was exposed.
   reference:
@@ -33,4 +33,4 @@ http:
       - type: status
         status:
           - 200
-# digest: 490a0046304402207f3fa71b0380b814f1f020b002591b97bb22fa0b6494ca9ba87d9c1397c01a7102200ca9c228f243b9f1839d45f42ab0302889252361b836bde9575cbdd4fb6357db:922c64590222798bb761d5b6d8e72950
+# digest: 4b0a00483046022100b9be8c5aa37388b16c43db85aa5c93187ff34f4b1b3725a8ce53ba4a5373baa7022100dfd4db9c0f79e961a71217d384ed258d08b9966a35fef929f452182e971f4a37:922c64590222798bb761d5b6d8e72950

@@ -41,6 +41,7 @@ http:
           - '<!-- This site is optimized with the Yoast (?:WordPress )?SEO plugin
             v([\d.]+) -'
           - '<!--[^>]+WP-Super-Cache'
+          - '/wp-content/uploads/(.*)'
         condition: or
 
     extractors:
@@ -61,4 +62,4 @@ http:
         group: 1
         regex:
           - 'install\.min\.css\?ver=((\d+\.?)+)\b'
-# digest: 4b0a00483046022100de129e8868c0b01c678f9a777ed24a2aa430588f103bc7a689a28ae34324cd27022100fdf7de76b3a0f48ff0b5f09489c1d6bd586b6b5c86c583a4fe8619f349446794:922c64590222798bb761d5b6d8e72950
+# digest: 4b0a0048304602210090f6652297045a17c96f8f135be893c62aec9a03bc16c9b45fcded6d6ecbd568022100b6403b0e0ef72f72e6a2e053e861c577af4bb6e2d4af8ae2e7e3c0290cdbccf1:922c64590222798bb761d5b6d8e72950

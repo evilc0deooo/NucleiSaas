@@ -1,7 +1,7 @@
 id: wordpress-limit-login-attempts-reloaded
 
 info:
-  name: Limit Login Attempts Reloaded Detection
+  name: Limit Login Attempts Reloaded – Login Security, Brute Force Protection, Firewall Detection
   author: ricardomaia
   severity: info
   reference:
@@ -46,4 +46,3 @@ http:
         part: body
         regex:
           - '(?i)Stable.tag:\s?([\w.]+)'
-# digest: 490a0046304402202c32e8c9cc3fa647b851ae40405de201f7665704c98c3677b39030d91671881702202c28be8c7a3058871b90cad7e849376987d26835cbb6c77af43fa03a93420491:922c64590222798bb761d5b6d8e72950
